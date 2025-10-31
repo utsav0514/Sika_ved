@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Expense Reports</h2>
+
+    <!-- Monthly Chart -->
+    <h4>Monthly Expenses</h4>
+    <canvas id="monthlyChart"></canvas>
+
+    <!-- Category Chart -->
+    <h4 class="mt-4">Category Expenses</h4>
+    <canvas id="categoryChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Bar Chart
+    var ctx1 = document.getElementById('monthlyChart').getContext('2d');
+    var monthlyChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: [{% for m in monthly_summary %}'{{ m.month|date:"M Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: [{% for m in monthly_summary %}{{ m.total }},{% endfor %}],
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // Category Pie Chart
+    var ctx2 = document.getElementById('categoryChart').getContext('2d');
+    var categoryChart = new Chart(ctx2, {
+        type: 'pie',
+        data: {
+            labels: [{% for c in category_summary %}'{{ c.category__name }}',{% endfor %}],
+            datasets: [{
+                data: [{% for c in category_summary %}{{ c.total }},{% endfor %}],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+            }]
+        }
+    });
+</script>
+{% endblock %}

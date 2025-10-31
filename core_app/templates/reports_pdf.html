@@ -1,0 +1,29 @@
+<h2>Expense Reports (PDF)</h2>
+
+<h4>Monthly Summary</h4>
+<table border="1" width="100%" cellspacing="0" cellpadding="5">
+    <tr>
+        <th>Month</th>
+        <th>Total Expenses</th>
+    </tr>
+    {% for m in monthly_summary %}
+    <tr>
+        <td>{{ m.month|date:"M Y" }}</td>
+        <td>{{ m.total }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h4>Category Summary</h4>
+<table border="1" width="100%" cellspacing="0" cellpadding="5">
+    <tr>
+        <th>Category</th>
+        <th>Total Expenses</th>
+    </tr>
+    {% for c in category_summary %}
+    <tr>
+        <td>{{ c.category__name }}</td>
+        <td>{{ c.total }}</td>
+    </tr>
+    {% endfor %}
+</table>

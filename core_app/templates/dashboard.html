@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Header with buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Dashboard</h2>
+        <div>
+            <a href="{% url 'add_expense' %}" class="btn btn-success">Add Expense</a>
+            <a href="{% url 'reports' %}" class="btn btn-info">View Reports</a>
+            <a href="{% url 'reports_pdf' %}" class="btn btn-primary">Download PDF</a>
+        </div>
+    </div>
+
+    <!-- Total Expenses -->
+    <p><strong>Total Expenses:</strong> ₹{{ total }}</p>
+
+    <!-- Category Summary List -->
+    <h4>Expenses by Category</h4>
+    <ul>
+        {% for c in category_summary %}
+            <li>{{ c.category__name }}: ₹{{ c.total }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Category Pie Chart -->
+    <canvas id="categoryChart"></canvas>
+
+    <!-- Monthly Expenses -->
+    <h4 class="mt-4">Monthly Expenses</h4>
+    <canvas id="monthlyChart"></canvas>
+
+    <!-- Recent Expenses Table -->
+    <h4 class="mt-4">Recent Expenses</h4>
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in expenses|slice:":5" %}
+            <tr>
+                <td>{{ exp.date }}</td>
+                <td>{{ exp.category.name }}</td>
+                <td>{{ exp.description }}</td>
+                <td>₹{{ exp.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">No expenses yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Category Pie Chart
+    var ctx1 = document.getElementById('categoryChart').getContext('2d');
+    var categoryChart = new Chart(ctx1, {
+        type: 'pie',
+        data: {
+            labels: [{% for c in category_summary %}'{{ c.category__name }}',{% endfor %}],
+            datasets: [{
+                data: [{% for c in category_summary %}{{ c.total }},{% endfor %}],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                title: { display: true, text: 'Expenses by Category' }
+            }
+        }
+    });
+
+    // Monthly Bar Chart
+    var ctx2 = document.getElementById('monthlyChart').getContext('2d');
+    var monthlyChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: [{% for m in monthly_summary %}'{{ m.month|date:"M Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: [{% for m in monthly_summary %}{{ m.total }},{% endfor %}],
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Monthly Expenses' }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+
+<style>
+    canvas { max-width: 600px; margin: 20px auto; display: block; }
+    table { margin-top: 20px; }
+</style>
+{% endblock %}
