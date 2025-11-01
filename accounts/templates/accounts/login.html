@@ -1,31 +1,243 @@
 {% extends 'accounts/base.html' %}
 
-{% block title %}Login{% endblock %}
+{% load static %}
+
+{% block title %}Login - Sikka-Ved{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-container {
+        margin-top: 50px;
+        margin-bottom: 50px;
+    }
+
+    .login-card {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        background: white;
+    }
+
+    .logo-section {
+        background: linear-gradient(135deg, #2c7a7b 0%, #2d8787 100%);
+        padding: 40px 30px;
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 500px;
+    }
+    
+    .logo-section img {
+        max-width: 100%;
+        max-height: 200px;
+        height: auto;
+        margin: 0 auto 20px;
+        filter: brightness(1.1);
+    }
+    
+    .logo-section h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: white;
+    }
+    
+    .logo-section p {
+        font-size: 1rem;
+        opacity: 0.95;
+        margin-bottom: 0;
+    }
+    
+    .logo-tagline {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 20px;
+        line-height: 1.6;
+    }
+    
+    .form-section {
+        padding: 50px 40px;
+    }
+    
+    .form-section h3 {
+        color: #2c7a7b;
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+    }
+    
+    .form-section .subtitle {
+        color: #718096;
+        margin-bottom: 30px;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 12px 18px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #2c7a7b;
+        box-shadow: 0 0 0 0.2rem rgba(44, 122, 123, 0.15);
+        outline: none;
+    }
+    
+    .form-label {
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, #2c7a7b 0%, #2d8787 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(44, 122, 123, 0.3);
+        width: 100%;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(44, 122, 123, 0.4);
+        background: linear-gradient(135deg, #2d8787 0%, #2c7a7b 100%);
+        color: white;
+    }
+    
+    .register-link {
+        text-align: center;
+        margin-top: 25px;
+        color: #718096;
+    }
+    
+    .register-link a {
+        color: #2c7a7b;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .register-link a:hover {
+        color: #2d8787;
+        text-decoration: underline;
+    }
+    
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+    
+    .forgot-password {
+        font-size: 0.9rem;
+        color: #2c7a7b;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .forgot-password:hover {
+        color: #2d8787;
+        text-decoration: underline;
+    }
+    
+    .remember-me-label {
+        font-size: 0.9rem;
+        color: #718096;
+        cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+        .logo-section {
+            padding: 30px 20px;
+            min-height: auto;
+        }
+        
+        .form-section {
+            padding: 30px 25px;
+        }
+        
+        .logo-section h2 {
+            font-size: 1.5rem;
+        }
+        
+        .form-section h3 {
+            font-size: 1.5rem;
+        }
+        
+        .logo-section img {
+            max-height: 150px;
+        }
+    }
+</style>
+
+<div class="container login-container">
     <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow">
-                <div class="card-header text-center bg-primary text-white">
-                    <h4>Login to Your Account</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field }}
-                                {% for error in field.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
+        <div class="col-lg-10 col-xl-9">
+            <div class="card login-card">
+                <div class="row g-0">
+                    <!-- Logo Section -->
+                    <div class="col-md-5 logo-section">
+                        <div>
+                            <img src="{% static 'C:\Users\ACER\Desktop\Sika_ved\static\images\logo.png' %}" alt="Sikka-Ved Logo">
+                            <h2>Sikka-Ved</h2>
+                            <p>A Smart Expenditure Management</p>
+                            <div class="logo-tagline">
+                                Track, analyze, and optimize your expenses with intelligent insights
                             </div>
-                        {% endfor %}
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
-                    </form>
-                    <div class="mt-3 text-center">
-                        Don’t have an account? <a href="{% url 'register' %}">Register here</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Section -->
+                    <div class="col-md-7 form-section">
+                        <h3>Welcome Back!</h3>
+                        <p class="subtitle">Please login to your account</p>
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="mb-4">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                                    <label class="form-check-label remember-me-label" for="rememberMe">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <a href="#" class="forgot-password">Forgot Password?</a>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-login">Login</button>
+                        </form>
+                        
+                        <div class="register-link">
+                            Don't have an account? <a href="{% url 'register' %}">Create Account</a>
+                        </div>
                     </div>
                 </div>
             </div>
