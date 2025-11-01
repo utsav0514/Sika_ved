@@ -12,11 +12,21 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Modern Navbar */
+        /* Modern Navbar - Fixed Position */
         .navbar-custom {
             background: linear-gradient(135deg, #2c7a7b 0%, #2d8787 100%);
             padding: 15px 0;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+
+        /* Add padding to body to prevent content from going under navbar */
+        body {
+            padding-top: 80px;
         }
 
         .navbar-brand-custom {
