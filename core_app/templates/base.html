@@ -208,7 +208,7 @@
                 <div class="nav-buttons ms-auto">
                     {% if user.is_authenticated %}
                         <a href="{% url 'dashboard' %}" class="btn-nav btn-dashboard">
-                            <span>📊</span> <strong>Dashboard</strong>
+                            <span>🏠</span> <strong>Back to Dashboard</strong>
                         </a>
                         <form method="post" action="{% url 'logout' %}" style="margin: 0;">
                             {% csrf_token %}
