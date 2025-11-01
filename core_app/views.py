@@ -7,15 +7,18 @@ from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
+from django.contrib.auth.decorators import login_required
 
+@login_required(login_url='/login/')  
 def dashboard(request):
     expenses = Expense.objects.filter(user=request.user)
-
 
     total = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
 
 
-    category_summary = expenses.values('category__name').annotate(total=Sum('amount'))
+    today = date.today()
+    current_month_expenses = expenses.filter(date__year=today.year, date__month=today.month)
+    category_summary = current_month_expenses.values('category__name').annotate(total=Sum('amount'))
 
 
     monthly_summary = expenses.annotate(month=TruncMonth('date')) \
@@ -28,6 +31,7 @@ def dashboard(request):
         'monthly_summary': monthly_summary
     }
     return render(request, 'dashboard.html', context)
+
 
 def reports(request):
     expenses = Expense.objects.filter(user=request.user)
