@@ -1,47 +1,547 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Reports{% endblock %}
+{% block title %}Expense Reports - Sikka-Ved{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Expense Reports</h2>
+<style>
+    /* Modern Reports Page Styling */
+    .reports-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: calc(100vh - 80px);
+        padding: 50px 20px;
+    }
 
-    <!-- Monthly Chart -->
-    <h4>Monthly Expenses</h4>
-    <canvas id="monthlyChart"></canvas>
+    .reports-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 50px;
+        animation: fadeInDown 0.8s ease;
+    }
 
-    <!-- Category Chart -->
-    <h4 class="mt-4">Category Expenses</h4>
-    <canvas id="categoryChart"></canvas>
+    .reports-header h2 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        letter-spacing: 1px;
+    }
+
+    .reports-header p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        font-weight: 300;
+        letter-spacing: 0.5px;
+    }
+
+    /* Summary Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #2c7a7b 0%, #2d8787 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 1s ease;
+        transition: all 0.4s ease;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .stat-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        opacity: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 2.3rem;
+        font-weight: 700;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        background: white;
+        border-radius: 25px;
+        padding: 40px;
+        margin-bottom: 35px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.8s ease;
+        transition: all 0.4s ease;
+        border: 3px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .chart-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .chart-title {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #2c7a7b;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid rgba(44, 122, 123, 0.2);
+    }
+
+    .chart-icon {
+        font-size: 2rem;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 450px;
+        margin-top: 20px;
+    }
+
+    .chart-wrapper.pie-chart {
+        height: 500px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 15px 35px;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        border: none;
+        transition: all 0.4s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-action:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-download {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+    }
+
+    .btn-download:hover {
+        color: white;
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-back:hover {
+        color: white;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: white;
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        opacity: 0.7;
+    }
+
+    .empty-state h3 {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    .empty-state p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 992px) {
+        .reports-header h2 {
+            font-size: 2.2rem;
+        }
+
+        .chart-wrapper {
+            height: 350px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .reports-container {
+            padding: 30px 15px;
+        }
+
+        .reports-header h2 {
+            font-size: 1.8rem;
+        }
+
+        .reports-header p {
+            font-size: 1rem;
+        }
+
+        .chart-card {
+            padding: 25px;
+        }
+
+        .chart-wrapper {
+            height: 300px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="reports-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="reports-header">
+            <h2>📊 Expense Reports & Analytics</h2>
+            <p>Comprehensive insights into your spending patterns and financial trends</p>
+        </div>
+
+        <!-- Monthly Expenses Chart -->
+        <div class="chart-card">
+            <div class="chart-title">
+                <span class="chart-icon">📊</span>
+                <span>Monthly Expenses Trend</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Expenses Chart -->
+        <div class="chart-card">
+            <div class="chart-title">
+                <span class="chart-icon">🥧</span>
+                <span>Expenses by Category</span>
+            </div>
+            <div class="chart-wrapper pie-chart">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-buttons">
+            <a href="{% url 'reports_pdf' %}" class="btn-action btn-download">
+                <span>📥</span>
+                <span>Download PDF Report</span>
+            </a>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Monthly Bar Chart
+    // Modern Chart.js configuration
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    Chart.defaults.font.size = 14;
+    Chart.defaults.color = '#4a5568';
+
+    // Monthly Bar Chart with Gradient
     var ctx1 = document.getElementById('monthlyChart').getContext('2d');
+    
+    // Create gradient for bars
+    var gradient1 = ctx1.createLinearGradient(0, 0, 0, 400);
+    gradient1.addColorStop(0, 'rgba(44, 122, 123, 0.9)');
+    gradient1.addColorStop(1, 'rgba(45, 135, 135, 0.5)');
+
     var monthlyChart = new Chart(ctx1, {
         type: 'bar',
         data: {
             labels: [{% for m in monthly_summary %}'{{ m.month|date:"M Y" }}',{% endfor %}],
             datasets: [{
-                label: 'Monthly Expenses',
+                label: 'Monthly Expenses (₹)',
                 data: [{% for m in monthly_summary %}{{ m.total }},{% endfor %}],
-                backgroundColor: '#36A2EB'
+                backgroundColor: gradient1,
+                borderColor: '#2c7a7b',
+                borderWidth: 2,
+                borderRadius: 12,
+                hoverBackgroundColor: 'rgba(44, 122, 123, 1)',
+                hoverBorderWidth: 3
             }]
         },
-        options: { scales: { y: { beginAtZero: true } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        },
+                        font: {
+                            size: 13,
+                            weight: '500'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.06)',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 13,
+                            weight: '500'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 15,
+                            weight: '600'
+                        },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 15,
+                    cornerRadius: 10,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.parsed.y.toLocaleString('en-IN');
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            }
+        }
     });
 
-    // Category Pie Chart
+    // Enhanced Category Pie Chart with Better Visuals
     var ctx2 = document.getElementById('categoryChart').getContext('2d');
+    
+    // Beautiful gradient colors for categories
+    var pieColors = [
+        'rgba(102, 126, 234, 0.9)',   // Purple
+        'rgba(44, 122, 123, 0.9)',    // Teal
+        'rgba(245, 101, 101, 0.9)',   // Red
+        'rgba(72, 187, 120, 0.9)',    // Green
+        'rgba(246, 173, 85, 0.9)',    // Orange
+        'rgba(236, 72, 153, 0.9)',    // Pink
+        'rgba(139, 92, 246, 0.9)',    // Violet
+        'rgba(14, 165, 233, 0.9)',    // Sky Blue
+        'rgba(251, 146, 60, 0.9)',    // Amber
+        'rgba(156, 163, 175, 0.9)'    // Gray
+    ];
+
     var categoryChart = new Chart(ctx2, {
         type: 'pie',
         data: {
             labels: [{% for c in category_summary %}'{{ c.category__name }}',{% endfor %}],
             datasets: [{
                 data: [{% for c in category_summary %}{{ c.total }},{% endfor %}],
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                backgroundColor: pieColors,
+                borderColor: 'white',
+                borderWidth: 5,
+                hoverBorderWidth: 6,
+                hoverBorderColor: '#ffffff',
+                hoverOffset: 20
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: 20
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            size: 15,
+                            weight: '600',
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 15,
+                        boxHeight: 15,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return {
+                                        text: label + ' - ₹' + value.toLocaleString('en-IN') + ' (' + percentage + '%)',
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    padding: 18,
+                    cornerRadius: 12,
+                    titleFont: {
+                        size: 16,
+                        weight: '700'
+                    },
+                    bodyFont: {
+                        size: 15,
+                        weight: '500'
+                    },
+                    bodySpacing: 8,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            var value = context.parsed || 0;
+                            var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            var percentage = ((value / total) * 100).toFixed(1);
+                            return [
+                                'Amount: ₹' + value.toLocaleString('en-IN'),
+                                'Percentage: ' + percentage + '%'
+                            ];
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
         }
     });
 </script>

@@ -1,18 +1,335 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Add Expense{% endblock %}
+{% block title %}Add Expense - Sikka-Ved{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Add Expense</h2>
-    <form method="post" id="expenseForm">
-        {% csrf_token %}
-        {{ form.as_p }}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .expense-container {
+        padding: 30px 0;
+    }
+    
+    .expense-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        max-width: 650px;
+        margin: 0 auto;
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, #2c7a7b 0%, #2d8787 100%);
+        padding: 25px 30px;
+        text-align: center;
+        color: white;
+    }
+    
+    .card-header-custom h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+    }
+    
+    .card-header-custom p {
+        opacity: 0.95;
+        margin: 8px 0 0 0;
+        font-size: 0.9rem;
+    }
+    
+    .card-body-custom {
+        padding: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        color: #2d3748;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        display: block;
+    }
+    
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 12px 18px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #2c7a7b;
+        box-shadow: 0 0 0 0.2rem rgba(44, 122, 123, 0.15);
+        outline: none;
+    }
+    
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+        max-height: 100px;
+    }
+    
+    /* Make date input smaller */
+    input[type="date"].form-control {
+        max-width: 250px;
+    }
+    
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+    }
+    
+    .btn-custom {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        cursor: pointer;
+    }
+    
+    .btn-add {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+    }
+    
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-cancel:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(113, 128, 150, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    /* Input Icons */
+    .input-with-icon {
+        position: relative;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #718096;
+        font-size: 1.1rem;
+    }
+    
+    .input-with-icon .form-control,
+    .input-with-icon .form-select {
+        padding-left: 45px;
+    }
+    
+    /* Form helptext */
+    .form-text {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    /* Success message styling */
+    .alert-custom {
+        background: #c6f6d5;
+        border-left: 4px solid #48bb78;
+        color: #22543d;
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .expense-container {
+            padding: 20px 0;
+        }
         
-        <button type="submit" class="btn btn-success">Add</button>
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+        .card-header-custom,
+        .card-body-custom {
+            padding: 20px;
+        }
+        
+        .card-header-custom h2 {
+            font-size: 1.4rem;
+        }
+        
+        .button-group {
+            flex-direction: column;
+        }
+        
+        .btn-custom {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container expense-container">
+    <div class="expense-card">
+        <!-- Header -->
+        <div class="card-header-custom">
+            <h2>Add New Expense</h2>
+            <p>Track your spending effectively</p>
+        </div>
+        
+        <!-- Form Body -->
+        <div class="card-body-custom">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-custom">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Date Field (First) -->
+                {% for field in form %}
+                    {% if field.name == 'date' %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span style="color: #e53e3e;">*</span>
+                                {% endif %}
+                            </label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">📅</span>
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Category Field (Second) -->
+                {% for field in form %}
+                    {% if field.name == 'category' %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span style="color: #e53e3e;">*</span>
+                                {% endif %}
+                            </label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">�</span>
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Amount Field (Third) -->
+                {% for field in form %}
+                    {% if field.name == 'amount' %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span style="color: #e53e3e;">*</span>
+                                {% endif %}
+                            </label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">₹</span>
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Description Field (Last) -->
+                {% for field in form %}
+                    {% if field.name == 'description' %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span style="color: #e53e3e;">*</span>
+                                {% endif %}
+                            </label>
+                            <div class="input-with-icon">
+                                <span class="input-icon" style="top: 20px;">📝</span>
+                                <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Enter expense description here..." style="padding-left: 45px;">{{ field.value|default:'' }}</textarea>
+                            </div>
+                            {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <div class="button-group">
+                    <button type="submit" class="btn-custom btn-add">
+                        ✓ Add Expense
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn-custom btn-cancel">
+                        ✕ Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- ✅ Script to disable future dates -->
