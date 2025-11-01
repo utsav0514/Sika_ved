@@ -6,11 +6,23 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Add Expense</h2>
-    <form method="post">
+    <form method="post" id="expenseForm">
         {% csrf_token %}
         {{ form.as_p }}
+        
         <button type="submit" class="btn btn-success">Add</button>
         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+<!-- ✅ Script to disable future dates -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.setAttribute("max", today);
+    }
+});
+</script>
 {% endblock %}

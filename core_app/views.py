@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
 
 @login_required(login_url='/login/')
 def dashboard(request):
@@ -19,14 +21,9 @@ def dashboard(request):
     else:
         today = date.today()
 
-    # Today's expenses
-    today_expenses = expenses.filter(date=today)
-    today_total = today_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-
     # Current week (last 7 days including latest expense date)
     start_of_this_week = today - timedelta(days=6)
-    end_of_this_week = today
-    this_week_expenses = expenses.filter(date__range=[start_of_this_week, end_of_this_week])
+    this_week_expenses = expenses.filter(date__range=[start_of_this_week, today])
     this_week_total = this_week_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
 
     # Previous week (7 days before current week)
@@ -39,28 +36,22 @@ def dashboard(request):
     weekly_difference = this_week_total - last_week_total
     weekly_difference_abs = abs(weekly_difference)
 
-    # Current month
+    # Monthly summary
     start_of_this_month = today.replace(day=1)
-    this_month_expenses = expenses.filter(date__gte=start_of_this_month)
-    this_month_total = this_month_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    this_month_total = expenses.filter(date__gte=start_of_this_month).aggregate(Sum('amount'))['amount__sum'] or 0
 
-    # Previous month
     if start_of_this_month.month == 1:
         start_of_last_month = start_of_this_month.replace(year=start_of_this_month.year-1, month=12)
     else:
         start_of_last_month = start_of_this_month.replace(month=start_of_this_month.month-1)
     end_of_last_month = start_of_this_month - timedelta(days=1)
-    last_month_expenses = expenses.filter(date__range=[start_of_last_month, end_of_last_month])
-    last_month_total = last_month_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+    last_month_total = expenses.filter(date__range=[start_of_last_month, end_of_last_month]).aggregate(Sum('amount'))['amount__sum'] or 0
 
-    # Category and monthly summary
     category_summary = expenses.values('category__name').annotate(total=Sum('amount'))
-    monthly_summary = expenses.annotate(month=TruncMonth('date')) \
-                              .values('month').annotate(total=Sum('amount')).order_by('month')
+    monthly_summary = expenses.annotate(month=TruncMonth('date')).values('month').annotate(total=Sum('amount')).order_by('month')
 
     context = {
         'expenses': expenses,
-        'today_total': today_total,
         'this_week_total': this_week_total,
         'last_week_total': last_week_total,
         'weekly_difference': weekly_difference,
@@ -78,8 +69,15 @@ def add_expense(request):
         form = ExpenseForm(request.POST)
         if form.is_valid():
             expense = form.save(commit=False)
+            
+            # Restrict future dates
+            if expense.date > date.today():
+                messages.error(request, "You cannot add expenses for future dates.")
+                return render(request, 'add_expense.html', {'form': form})
+            
             expense.user = request.user
             expense.save()
+            messages.success(request, "Expense added successfully.")
             return redirect('dashboard')
     else:
         form = ExpenseForm()
@@ -92,7 +90,14 @@ def edit_expense(request, expense_id):
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
-            form.save()
+            updated_expense = form.save(commit=False)
+            # Restrict future date while editing
+            if updated_expense.date > date.today():
+                messages.error(request, "You cannot set future dates for expenses.")
+                return render(request, 'edit_expense.html', {'form': form})
+            
+            updated_expense.save()
+            messages.success(request, "Expense updated successfully.")
             return redirect('dashboard')
     else:
         form = ExpenseForm(instance=expense)
@@ -103,6 +108,7 @@ def edit_expense(request, expense_id):
 def delete_expense(request, expense_id):
     expense = get_object_or_404(Expense, id=expense_id, user=request.user)
     expense.delete()
+    messages.success(request, "Expense deleted successfully.")
     return redirect('dashboard')
 
 

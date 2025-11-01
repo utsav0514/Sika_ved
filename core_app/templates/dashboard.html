@@ -19,9 +19,9 @@
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-white bg-primary mb-3">
-                <div class="card-header">Today's Expenses</div>
+                <div class="card-header">This Week</div>
                 <div class="card-body">
-                    <h5 class="card-title">₹{{ today_total }}</h5>
+                    <h5 class="card-title">₹{{ this_week_total }}</h5>
                 </div>
             </div>
         </div>
@@ -95,7 +95,7 @@
         <tbody>
             {% for exp in expenses|slice:":5" %}
             <tr>
-                <td>{{ exp.date }}</td>
+                <td>{{ exp.date|date:"M. j, Y" }}</td>
                 <td>{{ exp.category.name }}</td>
                 <td>{{ exp.description }}</td>
                 <td>₹{{ exp.amount }}</td>
@@ -112,11 +112,12 @@
     </table>
 </div>
 
+<!-- Charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Category Pie Chart
-    var ctx1 = document.getElementById('categoryChart').getContext('2d');
-    var categoryChart = new Chart(ctx1, {
+    const ctx1 = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx1, {
         type: 'pie',
         data: {
             labels: [{% for c in category_summary %}'{{ c.category__name }}',{% endfor %}],
@@ -135,8 +136,8 @@
     });
 
     // Monthly Bar Chart
-    var ctx2 = document.getElementById('monthlyChart').getContext('2d');
-    var monthlyChart = new Chart(ctx2, {
+    const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(ctx2, {
         type: 'bar',
         data: {
             labels: [{% for m in monthly_summary %}'{{ m.month|date:"M Y" }}',{% endfor %}],
@@ -163,7 +164,7 @@
 canvas { max-width: 600px; margin: 20px auto; display: block; }
 table { margin-top: 20px; }
 .card { text-align: center; }
-.card .card-title { font-size: 1.5rem; }
+.card .card-title { font-size: 1.4rem; }
 </style>
 
 {% endblock %}
