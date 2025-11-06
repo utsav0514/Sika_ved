@@ -11,14 +11,13 @@ from django.views import View
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
 from django.db.models import Sum
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.core.serializers.json import DjangoJSONEncoder
-
+from django.utils import timezone
 from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
 
@@ -138,18 +137,26 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        today = timezone.now()
 
-        # Total expenses and incomes
-        total_expense = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-        total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+        # Current month income/expense
+        current_month_expense = Expense.objects.filter(
+            user=user, date__year=today.year, date__month=today.month
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        # Remaining money after expenses
-        remaining_income = total_income - total_expense
+        current_month_income = Income.objects.filter(
+            user=user, date__year=today.year, date__month=today.month
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        # Net balance = total income of all months - total expense of all months
+        total_expense_all = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_income_all = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+        net_balance = total_income_all - total_expense_all
 
         context.update({
-            'expense_total': total_expense,
-            'income_total': remaining_income,  # <-- show remaining money here
-            'net_balance': remaining_income,   # <-- same as remaining
+            'expense_total': current_month_expense,   # Monthly expense
+            'income_total': current_month_income,     # Monthly income
+            'net_balance': net_balance,               # Saved money overall
             'expenses': Expense.objects.filter(user=user).order_by('-date')[:5],
             'incomes': Income.objects.filter(user=user).order_by('-date')[:5],
             'expense_monthly': (
@@ -169,6 +176,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         })
 
         return context
+
+
 # ================= EXPENSE CBVs =================
 class ExpenseBaseMixin(LoginRequiredMixin):
     model = Expense
@@ -178,11 +187,9 @@ class ExpenseBaseMixin(LoginRequiredMixin):
     def form_valid(self, form):
         obj = form.save(commit=False)
         if obj.date > date.today():
-            messages.error(self.request, "Cannot set future dates.")
             return self.form_invalid(form)
         obj.user = self.request.user
         obj.save()
-        messages.success(self.request, f"{self.model.__name__} saved successfully.")
         return super().form_valid(form)
 
 
@@ -204,7 +211,6 @@ class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
     def get(self, request, *args, **kwargs):
         obj = self.get_object()
         obj.delete()
-        messages.success(request, "Expense deleted successfully.")
         return redirect(self.success_url)
 
 
@@ -217,11 +223,9 @@ class IncomeBaseMixin(LoginRequiredMixin):
     def form_valid(self, form):
         obj = form.save(commit=False)
         if obj.date > date.today():
-            messages.error(self.request, "Cannot set future dates.")
             return self.form_invalid(form)
         obj.user = self.request.user
         obj.save()
-        messages.success(self.request, f"{self.model.__name__} saved successfully.")
         return super().form_valid(form)
 
 
@@ -243,7 +247,6 @@ class IncomeDeleteView(LoginRequiredMixin, DeleteView):
     def get(self, request, *args, **kwargs):
         obj = self.get_object()
         obj.delete()
-        messages.success(request, "Income deleted successfully.")
         return redirect(self.success_url)
 
 
