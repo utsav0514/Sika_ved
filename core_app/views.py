@@ -23,7 +23,7 @@ from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
 
 
-# ================= PDF RENDERER CLASS =================
+# ================= PDF RENDERER =================
 class PDFRenderer:
     def __init__(self, template_src, context_dict=None, filename="report.pdf"):
         self.template_src = template_src
@@ -41,7 +41,7 @@ class PDFRenderer:
         return response
 
 
-# ================= CHART GENERATOR CLASS =================
+# ================= CHART GENERATOR =================
 class ChartGenerator:
     def __init__(self, title='Chart', kind='bar', figsize=(6, 4)):
         self.title = title
@@ -49,26 +49,24 @@ class ChartGenerator:
         self.figsize = figsize
 
     def plot(self, labels, datasets):
-        """
-        datasets: list of dicts with keys: label, data, color
-        Example:
-        [{'label':'Expenses','data':[...],'color':'red'},
-         {'label':'Incomes','data':[...],'color':'green'}]
-        """
         fig, ax = plt.subplots(figsize=self.figsize)
 
         if self.kind == 'bar':
             width = 0.35
             x = range(len(labels))
             for i, dataset in enumerate(datasets):
-                ax.bar([p + i*width for p in x], dataset['data'], width=width, label=dataset['label'], color=dataset['color'])
+                ax.bar([p + i*width for p in x], dataset['data'], width=width,
+                       label=dataset['label'], color=dataset['color'])
             ax.set_xticks([p + width/2 for p in x])
             ax.set_xticklabels(labels, rotation=45)
+
         elif self.kind == 'line':
             for dataset in datasets:
-                ax.plot(labels, dataset['data'], marker='o', label=dataset['label'], color=dataset['color'])
+                ax.plot(labels, dataset['data'], marker='o',
+                        label=dataset['label'], color=dataset['color'])
+
         elif self.kind == 'pie':
-            dataset = datasets[0]  # Pie expects a single dataset
+            dataset = datasets[0]
             ax.pie(dataset['data'], labels=labels, autopct='%1.1f%%', colors=dataset.get('colors'))
 
         ax.set_title(self.title)
@@ -82,9 +80,9 @@ class ChartGenerator:
         img_base64 = base64.b64encode(buf.read()).decode('utf-8')
         return f"data:image/png;base64,{img_base64}"
 
-# ================= PERIOD LABEL UTILITIES =================
+
+# ================= UTILITIES =================
 def get_week_label(date_obj):
-    """Convert a date to 'YYYY-MM-First/Second/Third/Fourth Week' format."""
     month = date_obj.month
     year = date_obj.year
     day = date_obj.day
@@ -94,26 +92,25 @@ def get_week_label(date_obj):
     return f"{year}-{month:02d}-{week_names[week_of_month-1]}"
 
 
-# ================= REPORTS HELPER =================
 class ReportsHelper:
     @staticmethod
     def combine_summary(exp_qs, inc_qs, trunc_func, period_type='week'):
-        """Combine expense and income summaries based on truncation."""
         expense_summary = (
             exp_qs.annotate(period=trunc_func('date'))
-            .values('period')
-            .annotate(total=Sum('amount'))
-            .order_by('period')
+                  .values('period')
+                  .annotate(total=Sum('amount'))
+                  .order_by('period')
         )
         income_summary = (
             inc_qs.annotate(period=trunc_func('date'))
-            .values('period')
-            .annotate(total=Sum('amount'))
-            .order_by('period')
+                  .values('period')
+                  .annotate(total=Sum('amount'))
+                  .order_by('period')
         )
 
         combined = []
-        periods = sorted(set([e['period'] for e in expense_summary] + [i['period'] for i in income_summary]))
+        periods = sorted(set([e['period'] for e in expense_summary] +
+                             [i['period'] for i in income_summary]))
 
         for p in periods:
             if period_type == 'week':
@@ -141,65 +138,61 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        expenses = Expense.objects.filter(user=user).order_by('-date')
-        incomes = Income.objects.filter(user=user).order_by('-date')
 
-        context['expense_total'] = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-        context['income_total'] = incomes.aggregate(Sum('amount'))['amount__sum'] or 0
-        context['net_balance'] = context['income_total'] - context['expense_total']
+        total_expense = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        context['expense_monthly'] = (
-            expenses.annotate(month=TruncMonth('date'))
-            .values('month')
-            .annotate(total=Sum('amount'))
-            .order_by('month')
-        )
-        context['income_monthly'] = (
-            incomes.annotate(month=TruncMonth('date'))
-            .values('month')
-            .annotate(total=Sum('amount'))
-            .order_by('month')
-        )
+        remaining_money = total_income - total_expense
 
-        context['expenses'] = expenses
-        context['incomes'] = incomes
+        context.update({
+            'expense_total': total_expense,
+            'income_total': remaining_money,
+            'net_balance': remaining_money,
+            'expenses': Expense.objects.filter(user=user).order_by('-date')[:5],
+            'incomes': Income.objects.filter(user=user).order_by('-date')[:5],
+            'expense_monthly': (
+                Expense.objects.filter(user=user)
+                       .annotate(month=TruncMonth('date'))
+                       .values('month')
+                       .annotate(total=Sum('amount'))
+                       .order_by('month')
+            ),
+            'income_monthly': (
+                Income.objects.filter(user=user)
+                      .annotate(month=TruncMonth('date'))
+                      .values('month')
+                      .annotate(total=Sum('amount'))
+                      .order_by('month')
+            ),
+        })
         return context
 
 
-# ================= EXPENSE CRUD =================
-class ExpenseCreateView(LoginRequiredMixin, CreateView):
+# ================= EXPENSE CBVs =================
+class ExpenseBaseMixin(LoginRequiredMixin):
     model = Expense
     form_class = ExpenseForm
+    login_url = '/login/'
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        if obj.date > date.today():
+            messages.error(self.request, "Cannot set future dates.")
+            return self.form_invalid(form)
+        obj.user = self.request.user
+        obj.save()
+        messages.success(self.request, f"{self.model.__name__} saved successfully.")
+        return super().form_valid(form)
+
+
+class ExpenseCreateView(ExpenseBaseMixin, CreateView):
     template_name = 'add_expense.html'
     success_url = reverse_lazy('dashboard')
-    login_url = '/login/'
-
-    def form_valid(self, form):
-        expense = form.save(commit=False)
-        if expense.date > date.today():
-            messages.error(self.request, "Cannot add expense for future dates.")
-            return self.form_invalid(form)
-        expense.user = self.request.user
-        expense.save()
-        messages.success(self.request, "Expense added successfully.")
-        return super().form_valid(form)
 
 
-class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
-    model = Expense
-    form_class = ExpenseForm
+class ExpenseUpdateView(ExpenseBaseMixin, UpdateView):
     template_name = 'edit_expense.html'
     success_url = reverse_lazy('dashboard')
-    login_url = '/login/'
-
-    def form_valid(self, form):
-        expense = form.save(commit=False)
-        if expense.date > date.today():
-            messages.error(self.request, "Cannot set future dates for expenses.")
-            return self.form_invalid(form)
-        expense.save()
-        messages.success(self.request, "Expense updated successfully.")
-        return super().form_valid(form)
 
 
 class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
@@ -214,40 +207,31 @@ class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
         return redirect(self.success_url)
 
 
-# ================= INCOME CRUD =================
-class IncomeCreateView(LoginRequiredMixin, CreateView):
+# ================= INCOME CBVs =================
+class IncomeBaseMixin(LoginRequiredMixin):
     model = Income
     form_class = IncomeForm
+    login_url = '/login/'
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        if obj.date > date.today():
+            messages.error(self.request, "Cannot set future dates.")
+            return self.form_invalid(form)
+        obj.user = self.request.user
+        obj.save()
+        messages.success(self.request, f"{self.model.__name__} saved successfully.")
+        return super().form_valid(form)
+
+
+class IncomeCreateView(IncomeBaseMixin, CreateView):
     template_name = 'add_income.html'
     success_url = reverse_lazy('dashboard')
-    login_url = '/login/'
-
-    def form_valid(self, form):
-        income = form.save(commit=False)
-        if income.date > date.today():
-            messages.error(self.request, "Cannot add income for future dates.")
-            return self.form_invalid(form)
-        income.user = self.request.user
-        income.save()
-        messages.success(self.request, "Income added successfully.")
-        return super().form_valid(form)
 
 
-class IncomeUpdateView(LoginRequiredMixin, UpdateView):
-    model = Income
-    form_class = IncomeForm
+class IncomeUpdateView(IncomeBaseMixin, UpdateView):
     template_name = 'edit_income.html'
     success_url = reverse_lazy('dashboard')
-    login_url = '/login/'
-
-    def form_valid(self, form):
-        income = form.save(commit=False)
-        if income.date > date.today():
-            messages.error(self.request, "Cannot set future dates for income.")
-            return self.form_invalid(form)
-        income.save()
-        messages.success(self.request, "Income updated successfully.")
-        return super().form_valid(form)
 
 
 class IncomeDeleteView(LoginRequiredMixin, DeleteView):
@@ -262,8 +246,7 @@ class IncomeDeleteView(LoginRequiredMixin, DeleteView):
         return redirect(self.success_url)
 
 
-# ================= REPORTS =================
-
+# ================= REPORTS CBV =================
 class ReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'reports.html'
     login_url = '/login/'
@@ -274,37 +257,26 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
-        # ================= SUMMARY TABLES ===================
-        context['weekly_summary'] = ReportsHelper.combine_summary(
-            expenses, incomes, TruncWeek, period_type='week'
-        )
-        context['monthly_summary'] = ReportsHelper.combine_summary(
-            expenses, incomes, TruncMonth, period_type='month'
-        )
-        context['yearly_summary'] = ReportsHelper.combine_summary(
-            expenses, incomes, TruncYear, period_type='year'
-        )
+        context['weekly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncWeek, 'week')
+        context['monthly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncMonth, 'month')
+        context['yearly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncYear, 'year')
 
-        # ================= CATEGORY ===================
-        # Total category summary for table
         expense_category = (
             expenses.values('category__name')
-            .annotate(total=Sum('amount'))
-            .order_by('-total')
+                    .annotate(total=Sum('amount'))
+                    .order_by('-total')
         )
 
-        # Month-wise category totals for pie chart
-        expense_category_by_month = list(
-            expenses.annotate(month=TruncMonth('date'))
-            .values('month', 'category__name')
-            .annotate(total=Sum('amount'))
-            .order_by('-month', '-total')
+        context['expense_category'] = expense_category
+        context['expense_category_json'] = json.dumps(
+            list(expenses.annotate(month=TruncMonth('date'))
+                       .values('month', 'category__name')
+                       .annotate(total=Sum('amount'))
+                       .order_by('-month', '-total')),
+            cls=DjangoJSONEncoder
         )
 
-        context['expense_category'] = expense_category  # For table
-        context['expense_category_json'] = json.dumps(expense_category_by_month, cls=DjangoJSONEncoder)  # For chart
-
-        # ================= JSON FOR OTHER CHARTS ===================
+        # JSON for charts
         context['weekly_summary_json'] = json.dumps(context['weekly_summary'], cls=DjangoJSONEncoder)
         context['monthly_summary_json'] = json.dumps(context['monthly_summary'], cls=DjangoJSONEncoder)
         context['yearly_summary_json'] = json.dumps(context['yearly_summary'], cls=DjangoJSONEncoder)
@@ -312,8 +284,7 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         return context
 
 
-
-# ================= PDF REPORT =================
+# ================= PDF REPORT CBV =================
 class ReportsPDFView(LoginRequiredMixin, View):
     login_url = '/login/'
 
@@ -322,19 +293,16 @@ class ReportsPDFView(LoginRequiredMixin, View):
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
-        # Summaries
-        weekly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncWeek, period_type='week')
-        monthly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncMonth, period_type='month')
-        yearly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncYear, period_type='year')
+        weekly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncWeek, 'week')
+        monthly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncMonth, 'month')
+        yearly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncYear, 'year')
 
-        # Category totals
         expense_category = (
             expenses.values('category__name')
-            .annotate(total=Sum('amount'))
-            .order_by('-total')
+                    .annotate(total=Sum('amount'))
+                    .order_by('-total')
         )
 
-        # ================= CHARTS =================
         weekly_chart = ChartGenerator('Weekly Income vs Expense', 'bar').plot(
             [w['period'] for w in weekly_summary],
             [
@@ -365,7 +333,6 @@ class ReportsPDFView(LoginRequiredMixin, View):
               'colors':['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF']}]
         )
 
-        # Context for PDF
         context = {
             'weekly_summary': weekly_summary,
             'monthly_summary': monthly_summary,
