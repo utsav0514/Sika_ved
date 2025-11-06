@@ -139,15 +139,17 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
+        # Total expenses and incomes
         total_expense = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
         total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
 
-        remaining_money = total_income - total_expense
+        # Remaining money after expenses
+        remaining_income = total_income - total_expense
 
         context.update({
             'expense_total': total_expense,
-            'income_total': remaining_money,
-            'net_balance': remaining_money,
+            'income_total': remaining_income,  # <-- show remaining money here
+            'net_balance': remaining_income,   # <-- same as remaining
             'expenses': Expense.objects.filter(user=user).order_by('-date')[:5],
             'incomes': Income.objects.filter(user=user).order_by('-date')[:5],
             'expense_monthly': (
@@ -165,9 +167,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                       .order_by('month')
             ),
         })
+
         return context
-
-
 # ================= EXPENSE CBVs =================
 class ExpenseBaseMixin(LoginRequiredMixin):
     model = Expense
