@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')  # Non-GUI backend
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
