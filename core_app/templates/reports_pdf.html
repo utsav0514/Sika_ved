@@ -1,29 +1,54 @@
-<h2>Expense Reports (PDF)</h2>
-
-<h4>Monthly Summary</h4>
-<table border="1" width="100%" cellspacing="0" cellpadding="5">
+<h2>Weekly Summary</h2>
+<table border="1" cellspacing="0" cellpadding="5">
+    <tr><th>Week</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for item in weekly_summary %}
     <tr>
-        <th>Month</th>
-        <th>Total Expenses</th>
+        <td>{{ item.period|date:"d M Y" }}</td>
+        <td>{{ item.expenses }}</td>
+        <td>{{ item.incomes }}</td>
     </tr>
-    {% for m in monthly_summary %}
-    <tr>
-        <td>{{ m.month|date:"M Y" }}</td>
-        <td>{{ m.total }}</td>
-    </tr>
+    {% empty %}
+    <tr><td colspan="3">No data available.</td></tr>
     {% endfor %}
 </table>
 
-<h4>Category Summary</h4>
-<table border="1" width="100%" cellspacing="0" cellpadding="5">
+<h2>Monthly Summary</h2>
+<table border="1" cellspacing="0" cellpadding="5">
+    <tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for item in monthly_summary %}
     <tr>
-        <th>Category</th>
-        <th>Total Expenses</th>
+        <td>{{ item.period|date:"M Y" }}</td>
+        <td>{{ item.expenses }}</td>
+        <td>{{ item.incomes }}</td>
     </tr>
-    {% for c in category_summary %}
+    {% empty %}
+    <tr><td colspan="3">No data available.</td></tr>
+    {% endfor %}
+</table>
+
+<h2>Yearly Summary</h2>
+<table border="1" cellspacing="0" cellpadding="5">
+    <tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for item in yearly_summary %}
     <tr>
-        <td>{{ c.category__name }}</td>
-        <td>{{ c.total }}</td>
+        <td>{{ item.period|date:"Y" }}</td>
+        <td>{{ item.expenses }}</td>
+        <td>{{ item.incomes }}</td>
     </tr>
+    {% empty %}
+    <tr><td colspan="3">No data available.</td></tr>
+    {% endfor %}
+</table>
+
+<h2>Expense by Category</h2>
+<table border="1" cellspacing="0" cellpadding="5">
+    <tr><th>Category</th><th>Total (₹)</th></tr>
+    {% for item in expense_category %}
+    <tr>
+        <td>{{ item.category__name }}</td>
+        <td>{{ item.total }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2">No data available.</td></tr>
     {% endfor %}
 </table>

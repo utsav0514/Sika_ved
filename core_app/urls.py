@@ -1,11 +1,26 @@
 from django.urls import path
-from . import views
+from .views import (
+    DashboardView,
+    ExpenseCreateView, ExpenseUpdateView, ExpenseDeleteView,
+    IncomeCreateView, IncomeUpdateView, IncomeDeleteView,
+    ReportsView, ReportsPDFView
+)
 
 urlpatterns = [
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('add/', views.add_expense, name='add_expense'),
-    path('edit/<int:expense_id>/', views.edit_expense, name='edit_expense'),
-    path('delete/<int:expense_id>/', views.delete_expense, name='delete_expense'),
-    path('reports/', views.reports, name='reports'),
-    path('reports/pdf/', views.reports_pdf, name='reports_pdf'),
+    # Dashboard
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
+
+    # Expense routes
+    path('expense/add/', ExpenseCreateView.as_view(), name='add_expense'),
+    path('expense/edit/<int:pk>/', ExpenseUpdateView.as_view(), name='edit_expense'),
+    path('expense/delete/<int:pk>/', ExpenseDeleteView.as_view(), name='delete_expense'),
+
+    # Income routes
+    path('income/add/', IncomeCreateView.as_view(), name='add_income'),
+    path('income/edit/<int:pk>/', IncomeUpdateView.as_view(), name='edit_income'),
+    path('income/delete/<int:pk>/', IncomeDeleteView.as_view(), name='delete_income'),
+
+    # Reports
+    path('reports/', ReportsView.as_view(), name='reports'),
+    path('reports/pdf/', ReportsPDFView.as_view(), name='reports_pdf'),
 ]

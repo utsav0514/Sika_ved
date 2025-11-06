@@ -1,48 +1,92 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Reports{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <h2>Expense Reports</h2>
+<h2>Expense & Income Reports</h2>
 
-    <!-- Monthly Chart -->
-    <h4>Monthly Expenses</h4>
-    <canvas id="monthlyChart"></canvas>
+<hr>
 
-    <!-- Category Chart -->
-    <h4 class="mt-4">Category Expenses</h4>
-    <canvas id="categoryChart"></canvas>
-</div>
+<!-- WEEKLY SUMMARY -->
+<h4>Weekly Summary</h4>
+<table border="1" cellpadding="8">
+    <tr><th>Week Starting</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for week in expense_weekly %}
+    <tr>
+        <td>{{ week.week|date:"d M Y" }}</td>
+        <td>{{ week.total }}</td>
+        <td>
+            {% for inc in income_weekly %}
+                {% if inc.week == week.week %}
+                    {{ inc.total }}
+                {% endif %}
+            {% endfor %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">No weekly data available.</td></tr>
+    {% endfor %}
+</table>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Monthly Bar Chart
-    var ctx1 = document.getElementById('monthlyChart').getContext('2d');
-    var monthlyChart = new Chart(ctx1, {
-        type: 'bar',
-        data: {
-            labels: [{% for m in monthly_summary %}'{{ m.month|date:"M Y" }}',{% endfor %}],
-            datasets: [{
-                label: 'Monthly Expenses',
-                data: [{% for m in monthly_summary %}{{ m.total }},{% endfor %}],
-                backgroundColor: '#36A2EB'
-            }]
-        },
-        options: { scales: { y: { beginAtZero: true } } }
-    });
+<hr>
 
-    // Category Pie Chart
-    var ctx2 = document.getElementById('categoryChart').getContext('2d');
-    var categoryChart = new Chart(ctx2, {
-        type: 'pie',
-        data: {
-            labels: [{% for c in category_summary %}'{{ c.category__name }}',{% endfor %}],
-            datasets: [{
-                data: [{% for c in category_summary %}{{ c.total }},{% endfor %}],
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-            }]
-        }
-    });
-</script>
+<!-- MONTHLY SUMMARY -->
+<h4>Monthly Summary</h4>
+<table border="1" cellpadding="8">
+    <tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for month in expense_monthly %}
+    <tr>
+        <td>{{ month.month|date:"M Y" }}</td>
+        <td>{{ month.total }}</td>
+        <td>
+            {% for inc in income_monthly %}
+                {% if inc.month == month.month %}
+                    {{ inc.total }}
+                {% endif %}
+            {% endfor %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">No monthly data available.</td></tr>
+    {% endfor %}
+</table>
+
+<hr>
+
+<!-- ANNUAL SUMMARY -->
+<h4>Annual Summary</h4>
+<table border="1" cellpadding="8">
+    <tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+    {% for year in expense_yearly %}
+    <tr>
+        <td>{{ year.year|date:"Y" }}</td>
+        <td>{{ year.total }}</td>
+        <td>
+            {% for inc in income_yearly %}
+                {% if inc.year == year.year %}
+                    {{ inc.total }}
+                {% endif %}
+            {% endfor %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">No yearly data available.</td></tr>
+    {% endfor %}
+</table>
+
+<hr>
+
+<!-- CATEGORY SUMMARY -->
+<h4>Expense by Category</h4>
+<table border="1" cellpadding="8">
+    <tr><th>Category</th><th>Total (₹)</th></tr>
+    {% for cat in expense_category %}
+    <tr>
+        <td>{{ cat.category__name }}</td>
+        <td>{{ cat.total }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2">No category data available.</td></tr>
+    {% endfor %}
+</table>
+
+<br>
+<a href="{% url 'reports_pdf' %}" class="btn btn-primary">Download PDF Report</a>
 {% endblock %}
