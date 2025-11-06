@@ -48,24 +48,39 @@ class ChartGenerator:
         self.kind = kind
         self.figsize = figsize
 
-    def plot(self, x, y):
+    def plot(self, labels, datasets):
+        """
+        datasets: list of dicts with keys: label, data, color
+        Example:
+        [{'label':'Expenses','data':[...],'color':'red'},
+         {'label':'Incomes','data':[...],'color':'green'}]
+        """
         fig, ax = plt.subplots(figsize=self.figsize)
+
         if self.kind == 'bar':
-            ax.bar(x, y, color='skyblue')
+            width = 0.35
+            x = range(len(labels))
+            for i, dataset in enumerate(datasets):
+                ax.bar([p + i*width for p in x], dataset['data'], width=width, label=dataset['label'], color=dataset['color'])
+            ax.set_xticks([p + width/2 for p in x])
+            ax.set_xticklabels(labels, rotation=45)
         elif self.kind == 'line':
-            ax.plot(x, y, marker='o', color='green')
+            for dataset in datasets:
+                ax.plot(labels, dataset['data'], marker='o', label=dataset['label'], color=dataset['color'])
         elif self.kind == 'pie':
-            ax.pie(y, labels=x, autopct='%1.1f%%')
+            dataset = datasets[0]  # Pie expects a single dataset
+            ax.pie(dataset['data'], labels=labels, autopct='%1.1f%%', colors=dataset.get('colors'))
+
         ax.set_title(self.title)
-        plt.xticks(rotation=45)
+        ax.legend()
         plt.tight_layout()
+
         buf = io.BytesIO()
         plt.savefig(buf, format='png', bbox_inches='tight')
         plt.close(fig)
         buf.seek(0)
         img_base64 = base64.b64encode(buf.read()).decode('utf-8')
         return f"data:image/png;base64,{img_base64}"
-
 
 # ================= PERIOD LABEL UTILITIES =================
 def get_week_label(date_obj):
@@ -248,7 +263,7 @@ class IncomeDeleteView(LoginRequiredMixin, DeleteView):
 
 
 # ================= REPORTS =================
-# ================= REPORTS =================
+
 class ReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'reports.html'
     login_url = '/login/'
@@ -307,34 +322,50 @@ class ReportsPDFView(LoginRequiredMixin, View):
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
+        # Summaries
         weekly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncWeek, period_type='week')
         monthly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncMonth, period_type='month')
         yearly_summary = ReportsHelper.combine_summary(expenses, incomes, TruncYear, period_type='year')
 
+        # Category totals
         expense_category = (
             expenses.values('category__name')
             .annotate(total=Sum('amount'))
             .order_by('-total')
         )
 
-        # Charts
-        weekly_chart = ChartGenerator('Weekly Expenses', 'bar').plot(
+        # ================= CHARTS =================
+        weekly_chart = ChartGenerator('Weekly Income vs Expense', 'bar').plot(
             [w['period'] for w in weekly_summary],
-            [w['expenses'] for w in weekly_summary]
-        )
-        monthly_chart = ChartGenerator('Monthly Expenses', 'line').plot(
-            [m['period'] for m in monthly_summary],
-            [m['expenses'] for m in monthly_summary]
-        )
-        yearly_chart = ChartGenerator('Yearly Expenses', 'bar').plot(
-            [y['period'] for y in yearly_summary],
-            [y['expenses'] for y in yearly_summary]
-        )
-        category_chart = ChartGenerator('Expenses by Category', 'pie').plot(
-            [c['category__name'] for c in expense_category],
-            [c['total'] for c in expense_category]
+            [
+                {'label':'Expenses', 'data':[w['expenses'] for w in weekly_summary], 'color':'red'},
+                {'label':'Incomes', 'data':[w['incomes'] for w in weekly_summary], 'color':'green'}
+            ]
         )
 
+        monthly_chart = ChartGenerator('Monthly Income vs Expense', 'line').plot(
+            [m['period'] for m in monthly_summary],
+            [
+                {'label':'Expenses', 'data':[m['expenses'] for m in monthly_summary], 'color':'red'},
+                {'label':'Incomes', 'data':[m['incomes'] for m in monthly_summary], 'color':'green'}
+            ]
+        )
+
+        yearly_chart = ChartGenerator('Yearly Income vs Expense', 'bar').plot(
+            [y['period'] for y in yearly_summary],
+            [
+                {'label':'Expenses', 'data':[y['expenses'] for y in yearly_summary], 'color':'orange'},
+                {'label':'Incomes', 'data':[y['incomes'] for y in yearly_summary], 'color':'blue'}
+            ]
+        )
+
+        category_chart = ChartGenerator('Expenses by Category', 'pie').plot(
+            [c['category__name'] for c in expense_category],
+            [{'data':[c['total'] for c in expense_category],
+              'colors':['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF']}]
+        )
+
+        # Context for PDF
         context = {
             'weekly_summary': weekly_summary,
             'monthly_summary': monthly_summary,

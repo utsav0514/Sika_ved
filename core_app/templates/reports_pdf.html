@@ -1,28 +1,55 @@
-{% extends 'base.html' %}
-{% block content %}
-<h2>Income & Expense Reports (PDF)</h2>
+{% comment %}
+Standalone PDF template compatible with xhtml2pdf.
+Do NOT extend base.html or use external CSS.
+{% endcomment %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Income & Expense Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h2, h3, h4 { margin: 10px 0; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #000; padding: 5px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        img { display: block; margin: 10px auto; max-width: 100%; height: auto; }
+        hr { border: 1px solid #000; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<h2>Income & Expense Reports</h2>
 
 <h3>Weekly Summary</h3>
+{% if weekly_chart %}
 <img src="{{ weekly_chart }}" alt="Weekly Chart">
+{% endif %}
 
 <h3>Monthly Summary</h3>
+{% if monthly_chart %}
 <img src="{{ monthly_chart }}" alt="Monthly Chart">
+{% endif %}
 
 <h3>Yearly Summary</h3>
+{% if yearly_chart %}
 <img src="{{ yearly_chart }}" alt="Yearly Chart">
+{% endif %}
 
 <h3>Expenses by Category</h3>
+{% if category_chart %}
 <img src="{{ category_chart }}" alt="Category Chart">
+{% endif %}
 
 <hr>
 
-<!-- Include tables as fallback -->
 <h4>Weekly Table</h4>
-<table border="1" cellspacing="0" cellpadding="5">
+<table>
 <tr><th>Week</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
 {% for item in weekly_summary %}
 <tr>
-    <td>{{ item.period|date:"d M Y" }}</td>
+    <td>{{ item.period }}</td>
     <td>{{ item.expenses }}</td>
     <td>{{ item.incomes }}</td>
 </tr>
@@ -32,11 +59,11 @@
 </table>
 
 <h4>Monthly Table</h4>
-<table border="1" cellspacing="0" cellpadding="5">
+<table>
 <tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
 {% for item in monthly_summary %}
 <tr>
-    <td>{{ item.period|date:"M Y" }}</td>
+    <td>{{ item.period }}</td>
     <td>{{ item.expenses }}</td>
     <td>{{ item.incomes }}</td>
 </tr>
@@ -46,11 +73,11 @@
 </table>
 
 <h4>Yearly Table</h4>
-<table border="1" cellspacing="0" cellpadding="5">
+<table>
 <tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
 {% for item in yearly_summary %}
 <tr>
-    <td>{{ item.period|date:"Y" }}</td>
+    <td>{{ item.period }}</td>
     <td>{{ item.expenses }}</td>
     <td>{{ item.incomes }}</td>
 </tr>
@@ -60,7 +87,7 @@
 </table>
 
 <h4>Expenses by Category Table</h4>
-<table border="1" cellspacing="0" cellpadding="5">
+<table>
 <tr><th>Category</th><th>Total (₹)</th></tr>
 {% for item in expense_category %}
 <tr>
@@ -72,4 +99,5 @@
 {% endfor %}
 </table>
 
-{% endblock %}
+</body>
+</html>
