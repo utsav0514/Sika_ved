@@ -124,9 +124,13 @@ class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('dashboard')
     login_url = '/login/'
 
-    def delete(self, request, *args, **kwargs):
+    # Completely override GET to delete immediately
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.delete()
         messages.success(request, "Expense deleted successfully.")
-        return super().delete(request, *args, **kwargs)
+        return redirect(self.success_url)
+
 
 # ================= INCOME CRUD =================
 class IncomeCreateView(LoginRequiredMixin, CreateView):
@@ -169,10 +173,12 @@ class IncomeDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('dashboard')
     login_url = '/login/'
 
-    def delete(self, request, *args, **kwargs):
+    # Completely override GET to delete immediately
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.delete()
         messages.success(request, "Income deleted successfully.")
-        return super().delete(request, *args, **kwargs)
-
+        return redirect(self.success_url)
 # ================= REPORTS =================
 class ReportsView(LoginRequiredMixin, TemplateView):
     template_name = 'reports.html'
