@@ -1,92 +1,161 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>Expense & Income Reports</h2>
+<h2>Income & Expense Reports</h2>
 
-<hr>
+<!-- Charts -->
+<h3>Weekly Income vs Expense</h3>
+<canvas id="weeklyChart"></canvas>
 
-<!-- WEEKLY SUMMARY -->
-<h4>Weekly Summary</h4>
-<table border="1" cellpadding="8">
-    <tr><th>Week Starting</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for week in expense_weekly %}
-    <tr>
-        <td>{{ week.week|date:"d M Y" }}</td>
-        <td>{{ week.total }}</td>
-        <td>
-            {% for inc in income_weekly %}
-                {% if inc.week == week.week %}
-                    {{ inc.total }}
-                {% endif %}
-            {% endfor %}
-        </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No weekly data available.</td></tr>
-    {% endfor %}
+<h3>Monthly Income vs Expense</h3>
+<canvas id="monthlyChart"></canvas>
+
+<h3>Yearly Income vs Expense</h3>
+<canvas id="yearlyChart"></canvas>
+
+<h3>Expenses by Category</h3>
+<canvas id="categoryChart"></canvas>
+
+<br><br>
+
+<!-- ===================== TABLES ===================== -->
+
+<h3>Weekly Summary</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Week</th>
+            <th>Expenses</th>
+            <th>Incomes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in weekly_summary %}
+        <tr>
+            <td>{{ item.period }}</td>
+            <td>{{ item.expenses }}</td>
+            <td>{{ item.incomes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
-<hr>
-
-<!-- MONTHLY SUMMARY -->
-<h4>Monthly Summary</h4>
-<table border="1" cellpadding="8">
-    <tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for month in expense_monthly %}
-    <tr>
-        <td>{{ month.month|date:"M Y" }}</td>
-        <td>{{ month.total }}</td>
-        <td>
-            {% for inc in income_monthly %}
-                {% if inc.month == month.month %}
-                    {{ inc.total }}
-                {% endif %}
-            {% endfor %}
-        </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No monthly data available.</td></tr>
-    {% endfor %}
+<h3>Monthly Summary</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Expenses</th>
+            <th>Incomes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in monthly_summary %}
+        <tr>
+            <td>{{ item.period }}</td>
+            <td>{{ item.expenses }}</td>
+            <td>{{ item.incomes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
-<hr>
-
-<!-- ANNUAL SUMMARY -->
-<h4>Annual Summary</h4>
-<table border="1" cellpadding="8">
-    <tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for year in expense_yearly %}
-    <tr>
-        <td>{{ year.year|date:"Y" }}</td>
-        <td>{{ year.total }}</td>
-        <td>
-            {% for inc in income_yearly %}
-                {% if inc.year == year.year %}
-                    {{ inc.total }}
-                {% endif %}
-            {% endfor %}
-        </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No yearly data available.</td></tr>
-    {% endfor %}
+<h3>Yearly Summary</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Year</th>
+            <th>Expenses</th>
+            <th>Incomes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in yearly_summary %}
+        <tr>
+            <td>{{ item.period }}</td>
+            <td>{{ item.expenses }}</td>
+            <td>{{ item.incomes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
-<hr>
-
-<!-- CATEGORY SUMMARY -->
-<h4>Expense by Category</h4>
-<table border="1" cellpadding="8">
-    <tr><th>Category</th><th>Total (₹)</th></tr>
-    {% for cat in expense_category %}
-    <tr>
-        <td>{{ cat.category__name }}</td>
-        <td>{{ cat.total }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="2">No category data available.</td></tr>
-    {% endfor %}
+<h3>Expenses by Category</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in expense_category %}
+        <tr>
+            <td>{{ c.category__name }}</td>
+            <td>{{ c.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 <br>
 <a href="{% url 'reports_pdf' %}" class="btn btn-primary">Download PDF Report</a>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Parse JSON data for charts
+const weeklySummary = JSON.parse('{{ weekly_summary_json|escapejs }}');
+const monthlySummary = JSON.parse('{{ monthly_summary_json|escapejs }}');
+const yearlySummary = JSON.parse('{{ yearly_summary_json|escapejs }}');
+const expenseCategory = JSON.parse('{{ expense_category_json|escapejs }}');
+
+// WEEKLY CHART
+new Chart(document.getElementById('weeklyChart'), {
+    type: 'bar',
+    data: {
+        labels: weeklySummary.map(w => new Date(w.period).toLocaleDateString()),
+        datasets: [
+            { label: 'Expenses', data: weeklySummary.map(w => w.expenses), backgroundColor: 'rgba(255,99,132,0.6)' },
+            { label: 'Incomes', data: weeklySummary.map(w => w.incomes), backgroundColor: 'rgba(54,162,235,0.6)' }
+        ]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+});
+
+// MONTHLY CHART
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
+    data: {
+        labels: monthlySummary.map(m => new Date(m.period).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+        datasets: [
+            { label: 'Expenses', data: monthlySummary.map(m => m.expenses), borderColor: 'red', fill: false },
+            { label: 'Incomes', data: monthlySummary.map(m => m.incomes), borderColor: 'green', fill: false }
+        ]
+    },
+    options: { responsive: true }
+});
+
+// YEARLY CHART
+new Chart(document.getElementById('yearlyChart'), {
+    type: 'bar',
+    data: {
+        labels: yearlySummary.map(y => new Date(y.period).getFullYear()),
+        datasets: [
+            { label: 'Expenses', data: yearlySummary.map(y => y.expenses), backgroundColor: 'orange' },
+            { label: 'Incomes', data: yearlySummary.map(y => y.incomes), backgroundColor: 'blue' }
+        ]
+    },
+    options: { responsive: true }
+});
+
+// CATEGORY CHART
+new Chart(document.getElementById('categoryChart'), {
+    type: 'pie',
+    data: {
+        labels: expenseCategory.map(c => c.category__name),
+        datasets: [{ data: expenseCategory.map(c => c.total), backgroundColor: ['red','green','blue','orange','purple'] }]
+    },
+    options: { responsive: true }
+});
+</script>
 {% endblock %}

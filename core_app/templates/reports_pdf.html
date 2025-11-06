@@ -1,54 +1,75 @@
-<h2>Weekly Summary</h2>
+{% extends 'base.html' %}
+{% block content %}
+<h2>Income & Expense Reports (PDF)</h2>
+
+<h3>Weekly Summary</h3>
+<img src="{{ weekly_chart }}" alt="Weekly Chart">
+
+<h3>Monthly Summary</h3>
+<img src="{{ monthly_chart }}" alt="Monthly Chart">
+
+<h3>Yearly Summary</h3>
+<img src="{{ yearly_chart }}" alt="Yearly Chart">
+
+<h3>Expenses by Category</h3>
+<img src="{{ category_chart }}" alt="Category Chart">
+
+<hr>
+
+<!-- Include tables as fallback -->
+<h4>Weekly Table</h4>
 <table border="1" cellspacing="0" cellpadding="5">
-    <tr><th>Week</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for item in weekly_summary %}
-    <tr>
-        <td>{{ item.period|date:"d M Y" }}</td>
-        <td>{{ item.expenses }}</td>
-        <td>{{ item.incomes }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No data available.</td></tr>
-    {% endfor %}
+<tr><th>Week</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+{% for item in weekly_summary %}
+<tr>
+    <td>{{ item.period|date:"d M Y" }}</td>
+    <td>{{ item.expenses }}</td>
+    <td>{{ item.incomes }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3">No data available.</td></tr>
+{% endfor %}
 </table>
 
-<h2>Monthly Summary</h2>
+<h4>Monthly Table</h4>
 <table border="1" cellspacing="0" cellpadding="5">
-    <tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for item in monthly_summary %}
-    <tr>
-        <td>{{ item.period|date:"M Y" }}</td>
-        <td>{{ item.expenses }}</td>
-        <td>{{ item.incomes }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No data available.</td></tr>
-    {% endfor %}
+<tr><th>Month</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+{% for item in monthly_summary %}
+<tr>
+    <td>{{ item.period|date:"M Y" }}</td>
+    <td>{{ item.expenses }}</td>
+    <td>{{ item.incomes }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3">No data available.</td></tr>
+{% endfor %}
 </table>
 
-<h2>Yearly Summary</h2>
+<h4>Yearly Table</h4>
 <table border="1" cellspacing="0" cellpadding="5">
-    <tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
-    {% for item in yearly_summary %}
-    <tr>
-        <td>{{ item.period|date:"Y" }}</td>
-        <td>{{ item.expenses }}</td>
-        <td>{{ item.incomes }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="3">No data available.</td></tr>
-    {% endfor %}
+<tr><th>Year</th><th>Expenses (₹)</th><th>Incomes (₹)</th></tr>
+{% for item in yearly_summary %}
+<tr>
+    <td>{{ item.period|date:"Y" }}</td>
+    <td>{{ item.expenses }}</td>
+    <td>{{ item.incomes }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3">No data available.</td></tr>
+{% endfor %}
 </table>
 
-<h2>Expense by Category</h2>
+<h4>Expenses by Category Table</h4>
 <table border="1" cellspacing="0" cellpadding="5">
-    <tr><th>Category</th><th>Total (₹)</th></tr>
-    {% for item in expense_category %}
-    <tr>
-        <td>{{ item.category__name }}</td>
-        <td>{{ item.total }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="2">No data available.</td></tr>
-    {% endfor %}
+<tr><th>Category</th><th>Total (₹)</th></tr>
+{% for item in expense_category %}
+<tr>
+    <td>{{ item.category__name }}</td>
+    <td>{{ item.total }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="2">No data available.</td></tr>
+{% endfor %}
 </table>
+
+{% endblock %}

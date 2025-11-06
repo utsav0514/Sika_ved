@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')  # Non-GUI backend
+import matplotlib.pyplot as plt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
@@ -10,19 +13,43 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from datetime import date
-
 from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
+import io
+import base64
+from django.core.serializers.json import DjangoJSONEncoder
+import json
+
 
 # ================= PDF GENERATION FUNCTION =================
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
     html = template.render(context_dict)
     response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
     pisa_status = pisa.CreatePDF(html, dest=response)
     if pisa_status.err:
         return HttpResponse('Error generating PDF <pre>' + html + '</pre>')
     return response
+
+# ================= HELPER: Matplotlib chart to Base64 =================
+def plot_to_base64(x, y, title='Chart', kind='bar'):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    if kind == 'bar':
+        ax.bar(x, y, color='skyblue')
+    elif kind == 'line':
+        ax.plot(x, y, marker='o', color='green')
+    elif kind == 'pie':
+        ax.pie(y, labels=x, autopct='%1.1f%%')
+    ax.set_title(title)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    return f"data:image/png;base64,{img_base64}"
 
 # ================= DASHBOARD =================
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -154,56 +181,54 @@ class ReportsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
-        context['expense_weekly'] = (
-            expenses.annotate(week=TruncWeek('date'))
-            .values('week')
-            .annotate(total=Sum('amount'))
-            .order_by('week')
-        )
-        context['income_weekly'] = (
-            incomes.annotate(week=TruncWeek('date'))
-            .values('week')
-            .annotate(total=Sum('amount'))
-            .order_by('week')
-        )
+        def combine_summary(expenses_qs, incomes_qs, trunc_func):
+            expense_summary = (
+                expenses_qs.annotate(period=trunc_func('date'))
+                .values('period')
+                .annotate(total=Sum('amount'))
+                .order_by('period')
+            )
+            income_summary = (
+                incomes_qs.annotate(period=trunc_func('date'))
+                .values('period')
+                .annotate(total=Sum('amount'))
+                .order_by('period')
+            )
+            combined = []
+            periods = sorted(set([e['period'] for e in expense_summary] + [i['period'] for i in income_summary]))
+            for p in periods:
+                expense_total = next((e['total'] for e in expense_summary if e['period'] == p), 0)
+                income_total = next((i['total'] for i in income_summary if i['period'] == p), 0)
+                combined.append({'period': p.strftime('%Y-%m-%d'), 'expenses': expense_total, 'incomes': income_total})
+            return combined
 
-        context['expense_monthly'] = (
-            expenses.annotate(month=TruncMonth('date'))
-            .values('month')
-            .annotate(total=Sum('amount'))
-            .order_by('month')
-        )
-        context['income_monthly'] = (
-            incomes.annotate(month=TruncMonth('date'))
-            .values('month')
-            .annotate(total=Sum('amount'))
-            .order_by('month')
-        )
+        weekly_summary = combine_summary(expenses, incomes, TruncWeek)
+        monthly_summary = combine_summary(expenses, incomes, TruncMonth)
+        yearly_summary = combine_summary(expenses, incomes, TruncYear)
 
-        context['expense_yearly'] = (
-            expenses.annotate(year=TruncYear('date'))
-            .values('year')
-            .annotate(total=Sum('amount'))
-            .order_by('year')
-        )
-        context['income_yearly'] = (
-            incomes.annotate(year=TruncYear('date'))
-            .values('year')
-            .annotate(total=Sum('amount'))
-            .order_by('year')
-        )
-
-        context['expense_category'] = (
+        expense_category = list(
             expenses.values('category__name')
             .annotate(total=Sum('amount'))
             .order_by('-total')
         )
 
-        return context
+        # Pass **raw Python objects** for tables
+        context['weekly_summary'] = weekly_summary
+        context['monthly_summary'] = monthly_summary
+        context['yearly_summary'] = yearly_summary
+        context['expense_category'] = expense_category
 
+        # Pass JSON for JavaScript charts
+        context['weekly_summary_json'] = json.dumps(weekly_summary, cls=DjangoJSONEncoder)
+        context['monthly_summary_json'] = json.dumps(monthly_summary, cls=DjangoJSONEncoder)
+        context['yearly_summary_json'] = json.dumps(yearly_summary, cls=DjangoJSONEncoder)
+        context['expense_category_json'] = json.dumps(expense_category, cls=DjangoJSONEncoder)
+
+        return context
 # ================= PDF REPORT =================
 class ReportsPDFView(LoginRequiredMixin, View):
     login_url = '/login/'
@@ -213,7 +238,6 @@ class ReportsPDFView(LoginRequiredMixin, View):
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
-        # Helper function to combine expenses and incomes by period
         def combine_summary(expenses_qs, incomes_qs, trunc_func):
             expense_summary = (
                 expenses_qs.annotate(period=trunc_func('date'))
@@ -235,16 +259,38 @@ class ReportsPDFView(LoginRequiredMixin, View):
                 combined.append({'period': p, 'expenses': expense_total, 'incomes': income_total})
             return combined
 
-        # Weekly, Monthly, Yearly summaries
         weekly_summary = combine_summary(expenses, incomes, TruncWeek)
         monthly_summary = combine_summary(expenses, incomes, TruncMonth)
         yearly_summary = combine_summary(expenses, incomes, TruncYear)
-
-        # Category-wise expenses
         expense_category = (
             expenses.values('category__name')
             .annotate(total=Sum('amount'))
             .order_by('-total')
+        )
+
+        # Generate charts as images
+        weekly_chart = plot_to_base64(
+            [w['period'].strftime('%d %b') for w in weekly_summary],
+            [w['expenses'] for w in weekly_summary],
+            'Weekly Expenses', kind='bar'
+        )
+
+        monthly_chart = plot_to_base64(
+            [m['period'].strftime('%b %Y') for m in monthly_summary],
+            [m['expenses'] for m in monthly_summary],
+            'Monthly Expenses', kind='line'
+        )
+
+        yearly_chart = plot_to_base64(
+            [y['period'].strftime('%Y') for y in yearly_summary],
+            [y['expenses'] for y in yearly_summary],
+            'Yearly Expenses', kind='bar'
+        )
+
+        category_chart = plot_to_base64(
+            [c['category__name'] for c in expense_category],
+            [c['total'] for c in expense_category],
+            'Expenses by Category', kind='pie'
         )
 
         context = {
@@ -252,6 +298,10 @@ class ReportsPDFView(LoginRequiredMixin, View):
             'monthly_summary': monthly_summary,
             'yearly_summary': yearly_summary,
             'expense_category': expense_category,
+            'weekly_chart': weekly_chart,
+            'monthly_chart': monthly_chart,
+            'yearly_chart': yearly_chart,
+            'category_chart': category_chart,
         }
 
         return render_to_pdf('reports_pdf.html', context)
