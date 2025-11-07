@@ -53,11 +53,14 @@
             </div>
         </div>
 
-        <!-- Yearly Chart -->
+        <!-- Yearly Chart + Year Filter -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Yearly Income vs Expense</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title text-center">Yearly Income vs Expense</h5>
+                        <!-- Optional: add year filter here if needed -->
+                    </div>
                     <canvas id="yearlyChart"></canvas>
                 </div>
             </div>
@@ -87,6 +90,7 @@
 
     <!-- ===================== TABLES ===================== -->
     <div class="row g-4">
+
         <!-- Weekly Summary -->
         <div class="col-12">
             <div class="card shadow-sm">

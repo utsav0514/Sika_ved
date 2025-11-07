@@ -302,22 +302,20 @@ class ReportsView(LoginRequiredMixin, TemplateView):
     login_url = '/login/'
 
     def get_context_data(self, **kwargs):
-        import json  
+        import json
         from django.core.serializers.json import DjangoJSONEncoder
-
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Base QuerySets
         base_expenses = Expense.objects.filter(user=user)
         base_incomes = Income.objects.filter(user=user)
 
-        # ================= FILTER PARAMETERS =================
+        # ---------------- FILTER PARAMETERS ----------------
         weekly_month = self.request.GET.get('weekly_month')      # YYYY-MM
         monthly_year = self.request.GET.get('monthly_year')      # YYYY
         category_month = self.request.GET.get('category_month')  # YYYY-MM
 
-        # ================= WEEKLY SUMMARY =================
+        # ---------------- WEEKLY SUMMARY ----------------
         weekly_expenses = base_expenses
         weekly_incomes = base_incomes
         if weekly_month:
@@ -329,29 +327,28 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         )
         context['selected_weekly_month'] = weekly_month
 
-        # ================= MONTHLY SUMMARY =================
+        # ---------------- MONTHLY SUMMARY ----------------
         monthly_expenses = base_expenses
         monthly_incomes = base_incomes
         if monthly_year:
             y = int(monthly_year)
             monthly_expenses = monthly_expenses.filter(date__year=y)
             monthly_incomes = monthly_incomes.filter(date__year=y)
-        monthly_summary = ReportsHelper.combine_summary(monthly_expenses, monthly_incomes, TruncMonth, 'month')
-
-        # Convert 'YYYY-MM' to month names for Chart.js
-        for m in monthly_summary:
-            year, month = map(int, m['period'].split('-'))
-            m['period'] = calendar.month_abbr[month]  # Jan, Feb, Mar...
+        monthly_summary = ReportsHelper.combine_summary(
+            monthly_expenses, monthly_incomes, TruncMonth, 'month'
+        )
         context['monthly_summary'] = monthly_summary
         context['selected_monthly_year'] = monthly_year
 
-        # ================= YEARLY SUMMARY =================
+        # ---------------- YEARLY SUMMARY ----------------
         yearly_expenses = base_expenses
         yearly_incomes = base_incomes
-        yearly_summary = ReportsHelper.combine_summary(yearly_expenses, yearly_incomes, TruncYear, 'year')
+        yearly_summary = ReportsHelper.combine_summary(
+            yearly_expenses, yearly_incomes, TruncYear, 'year'
+        )
         context['yearly_summary'] = yearly_summary
 
-        # ================= CATEGORY SUMMARY =================
+        # ---------------- CATEGORY SUMMARY ----------------
         category_expenses = base_expenses
         if category_month:
             y, m = map(int, category_month.split('-'))
@@ -364,51 +361,13 @@ class ReportsView(LoginRequiredMixin, TemplateView):
         context['expense_category'] = expense_category
         context['selected_category_month'] = category_month
 
-        # ================= JSON FOR CHART.JS =================
+        # ---------------- JSON FOR CHART.JS ----------------
         context['weekly_summary_json'] = json.dumps(context['weekly_summary'], cls=DjangoJSONEncoder)
         context['monthly_summary_json'] = json.dumps(context['monthly_summary'], cls=DjangoJSONEncoder)
         context['yearly_summary_json'] = json.dumps(context['yearly_summary'], cls=DjangoJSONEncoder)
         context['expense_category_json'] = json.dumps(list(expense_category), cls=DjangoJSONEncoder)
 
-        # ================= DROPDOWN OPTIONS =================
-        context['all_months'] = base_expenses.dates('date', 'month', order='DESC')
-        context['all_years'] = base_expenses.dates('date', 'year', order='DESC')
-
-        return context
-
-        # ================= CATEGORY SUMMARY =================
-        category_expenses = base_expenses
-        if category_month:
-            y, m = map(int, category_month.split('-'))
-            category_expenses = category_expenses.filter(date__year=y, date__month=m)
-        expense_category = (
-            category_expenses.values('category__name')
-                             .annotate(total=Sum('amount'))
-                             .order_by('-total')
-        )
-        context['expense_category'] = expense_category
-        context['selected_category_month'] = category_month
-
-        # ================= JSON FOR CHART.JS =================
-        from django.core.serializers.json import DjangoJSONEncoder
-        import json
-
-        context['weekly_summary_json'] = json.dumps(context['weekly_summary'], cls=DjangoJSONEncoder)
-        context['monthly_summary_json'] = json.dumps(context['monthly_summary'], cls=DjangoJSONEncoder)
-        context['yearly_summary_json'] = json.dumps(context['yearly_summary'], cls=DjangoJSONEncoder)
-        context['expense_category_json'] = json.dumps(list(expense_category), cls=DjangoJSONEncoder)
-
-        # ================= DROPDOWN OPTIONS =================
-        context['all_months'] = base_expenses.dates('date', 'month', order='DESC')
-        context['all_years'] = base_expenses.dates('date', 'year', order='DESC')
-
-        return context
-        # ---------------- FILTER VALUES FOR TEMPLATE ----------------
-        context['selected_week_month'] = weekly_month
-        context['selected_month'] = monthly_month
-        context['selected_year'] = year_filter
-
-        # ---------------- DROPDOWNS ----------------
+        # ---------------- DROPDOWN OPTIONS ----------------
         context['all_months'] = base_expenses.dates('date', 'month', order='DESC')
         context['all_years'] = base_expenses.dates('date', 'year', order='DESC')
 
