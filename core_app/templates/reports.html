@@ -20,7 +20,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="card-title">Weekly Income vs Expense</h5>
                         <select id="weeklyMonthFilter" class="form-select w-auto">
-                            <option value="">This Month</option>
+                            <option value="">All Months</option>
                             {% for m in all_months %}
                             <option value="{{ m|date:'Y-m' }}" {% if selected_weekly_month == m|date:'Y-m' %}selected{% endif %}>
                                 {{ m|date:"F Y" }}
@@ -40,7 +40,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="card-title">Monthly Income vs Expense</h5>
                         <select id="monthlyYearFilter" class="form-select w-auto">
-                            <option value="">This Year</option>
+                            <option value="">All Years</option>
                             {% for y in all_years %}
                             <option value="{{ y|date:'Y' }}" {% if selected_monthly_year == y|date:'Y' %}selected{% endif %}>
                                 {{ y|date:"Y" }}
@@ -70,7 +70,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="card-title">Expenses by Category</h5>
                         <select id="categoryMonthFilter" class="form-select w-auto">
-                            <option value="">This Month</option>
+                            <option value="">All Months</option>
                             {% for m in all_months %}
                             <option value="{{ m|date:'Y-m' }}" {% if selected_category_month == m|date:'Y-m' %}selected{% endif %}>
                                 {{ m|date:"F Y" }}

@@ -170,52 +170,58 @@ class ReportsHelper:
         return combined
 
 # ================= DASHBOARD =================
+
+
+
+from datetime import datetime
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
-    login_url = '/login/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        today = timezone.now()
+        today = datetime.today()
 
-        # Current month income/expense
-        current_month_expense = Expense.objects.filter(
-            user=user, date__year=today.year, date__month=today.month
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        # Get all data (filtered by user)
+        expenses = Expense.objects.filter(user=user).order_by('-date')
+        incomes = Income.objects.filter(user=user).order_by('-date')
 
-        current_month_income = Income.objects.filter(
-            user=user, date__year=today.year, date__month=today.month
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        # Calculate current month's total income & expense
+        current_month = today.month
+        current_year = today.year
+        expense_total = expenses.filter(date__month=current_month, date__year=current_year).aggregate(total=Sum('amount'))['total'] or 0
+        income_total = incomes.filter(date__month=current_month, date__year=current_year).aggregate(total=Sum('amount'))['total'] or 0
 
-        # Net balance = total income of all months - total expense of all months
-        total_expense_all = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-        total_income_all = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-        net_balance = total_income_all - total_expense_all
+        # Calculate net balance
+        net_balance = income_total - expense_total
 
+        # Monthly summaries for charts
+        expense_monthly = (
+            expenses.values('date__year', 'date__month')
+            .annotate(total=Sum('amount'))
+            .order_by('date__year', 'date__month')
+        )
+        income_monthly = (
+            incomes.values('date__year', 'date__month')
+            .annotate(total=Sum('amount'))
+            .order_by('date__year', 'date__month')
+        )
+
+        # Add to context
         context.update({
-            'expense_total': current_month_expense,   # Monthly expense
-            'income_total': current_month_income,     # Monthly income
-            'net_balance': net_balance,               # Saved money overall
-            'expenses': Expense.objects.filter(user=user).order_by('-date')[:5],
-            'incomes': Income.objects.filter(user=user).order_by('-date')[:5],
-            'expense_monthly': (
-                Expense.objects.filter(user=user)
-                       .annotate(month=TruncMonth('date'))
-                       .values('month')
-                       .annotate(total=Sum('amount'))
-                       .order_by('month')
-            ),
-            'income_monthly': (
-                Income.objects.filter(user=user)
-                      .annotate(month=TruncMonth('date'))
-                      .values('month')
-                      .annotate(total=Sum('amount'))
-                      .order_by('month')
-            ),
+            'expenses': expenses,
+            'incomes': incomes,
+            'expense_total': expense_total,
+            'income_total': income_total,
+            'net_balance': net_balance,
+            'expense_monthly': expense_monthly,
+            'income_monthly': income_monthly,
         })
 
         return context
+
 
 
 # ================= EXPENSE CBVs =================

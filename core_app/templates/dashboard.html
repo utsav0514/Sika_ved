@@ -65,11 +65,17 @@
         </div>
     </div>
 
-    <!-- Recent Expenses -->
+    <!-- Expenses Section -->
     <div class="card shadow-sm mb-4 rounded-4 p-3">
-        <h5 class="mb-3">Recent Expenses</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Expenses</h5>
+            <select id="expenseFilter" class="form-select form-select-sm w-auto">
+                <option value="recent" selected>Recent</option>
+                <option value="all">All</option>
+            </select>
+        </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover mb-0">
+            <table class="table table-bordered table-hover mb-0" id="expenseTable">
                 <thead class="table-light">
                     <tr>
                         <th>Date</th>
@@ -80,8 +86,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for exp in expenses|slice:":5" %}
-                    <tr>
+                    {% for exp in expenses %}
+                    <tr class="expense-row {% if forloop.counter > 5 %}d-none{% endif %}">
                         <td>{{ exp.date|date:"M. j, Y" }}</td>
                         <td>{{ exp.category.name }}</td>
                         <td>{{ exp.description }}</td>
@@ -98,13 +104,22 @@
                 </tbody>
             </table>
         </div>
+        <div class="text-end mt-2">
+            <small id="expenseCount">Showing 5 of {{ expenses|length }} records</small>
+        </div>
     </div>
 
-    <!-- Recent Incomes -->
+    <!-- Incomes Section -->
     <div class="card shadow-sm mb-5 rounded-4 p-3">
-        <h5 class="mb-3">Recent Incomes</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Incomes</h5>
+            <select id="incomeFilter" class="form-select form-select-sm w-auto">
+                <option value="recent" selected>Recent</option>
+                <option value="all">All</option>
+            </select>
+        </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover mb-0">
+            <table class="table table-bordered table-hover mb-0" id="incomeTable">
                 <thead class="table-light">
                     <tr>
                         <th>Date</th>
@@ -114,8 +129,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for inc in incomes|slice:":5" %}
-                    <tr>
+                    {% for inc in incomes %}
+                    <tr class="income-row {% if forloop.counter > 5 %}d-none{% endif %}">
                         <td>{{ inc.date|date:"M. j, Y" }}</td>
                         <td>{{ inc.description }}</td>
                         <td>₹{{ inc.amount }}</td>
@@ -130,6 +145,9 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="text-end mt-2">
+            <small id="incomeCount">Showing 5 of {{ incomes|length }} records</small>
         </div>
     </div>
 
@@ -164,6 +182,38 @@ new Chart(incomeCtx, {
         }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// ================= Dropdown Filter Logic =================
+document.addEventListener("DOMContentLoaded", function () {
+    const expenseFilter = document.getElementById("expenseFilter");
+    const incomeFilter = document.getElementById("incomeFilter");
+    const expenseCount = document.getElementById("expenseCount");
+    const incomeCount = document.getElementById("incomeCount");
+    const totalExpenses = {{ expenses|length }};
+    const totalIncomes = {{ incomes|length }};
+
+    expenseFilter.addEventListener("change", function () {
+        const rows = document.querySelectorAll(".expense-row");
+        rows.forEach((row, i) => {
+            if (expenseFilter.value === "recent" && i >= 5) row.classList.add("d-none");
+            else row.classList.remove("d-none");
+        });
+        expenseCount.textContent = expenseFilter.value === "recent"
+            ? `Showing 5 of ${totalExpenses} records`
+            : `Showing all ${totalExpenses} records`;
+    });
+
+    incomeFilter.addEventListener("change", function () {
+        const rows = document.querySelectorAll(".income-row");
+        rows.forEach((row, i) => {
+            if (incomeFilter.value === "recent" && i >= 5) row.classList.add("d-none");
+            else row.classList.remove("d-none");
+        });
+        incomeCount.textContent = incomeFilter.value === "recent"
+            ? `Showing 5 of ${totalIncomes} records`
+            : `Showing all ${totalIncomes} records`;
+    });
 });
 </script>
 {% endblock %}
