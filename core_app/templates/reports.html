@@ -22,7 +22,7 @@
                         <select id="weeklyMonthFilter" class="form-select w-auto">
                             <option value="">This Month</option>
                             {% for m in all_months %}
-                            <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                            <option value="{{ m|date:'Y-m' }}" {% if selected_weekly_month == m|date:'Y-m' %}selected{% endif %}>
                                 {{ m|date:"F Y" }}
                             </option>
                             {% endfor %}
@@ -42,7 +42,7 @@
                         <select id="monthlyYearFilter" class="form-select w-auto">
                             <option value="">This Year</option>
                             {% for y in all_years %}
-                            <option value="{{ y|date:'Y' }}" {% if selected_year == y|date:'Y' %}selected{% endif %}>
+                            <option value="{{ y|date:'Y' }}" {% if selected_monthly_year == y|date:'Y' %}selected{% endif %}>
                                 {{ y|date:"Y" }}
                             </option>
                             {% endfor %}
@@ -72,7 +72,7 @@
                         <select id="categoryMonthFilter" class="form-select w-auto">
                             <option value="">This Month</option>
                             {% for m in all_months %}
-                            <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                            <option value="{{ m|date:'Y-m' }}" {% if selected_category_month == m|date:'Y-m' %}selected{% endif %}>
                                 {{ m|date:"F Y" }}
                             </option>
                             {% endfor %}
@@ -280,24 +280,24 @@
     document.getElementById('weeklyMonthFilter').addEventListener('change', function(){
         const month = this.value;
         const url = new URL(window.location.href);
-        if(month) url.searchParams.set('month', month);
-        else url.searchParams.delete('month');
+        if(month) url.searchParams.set('weekly_month', month);
+        else url.searchParams.delete('weekly_month');
         window.location.href = url.toString();
     });
 
     document.getElementById('monthlyYearFilter').addEventListener('change', function(){
         const year = this.value;
         const url = new URL(window.location.href);
-        if(year) url.searchParams.set('year', year);
-        else url.searchParams.delete('year');
+        if(year) url.searchParams.set('monthly_year', year);
+        else url.searchParams.delete('monthly_year');
         window.location.href = url.toString();
     });
 
     document.getElementById('categoryMonthFilter').addEventListener('change', function(){
         const month = this.value;
         const url = new URL(window.location.href);
-        if(month) url.searchParams.set('month', month);
-        else url.searchParams.delete('month');
+        if(month) url.searchParams.set('category_month', month);
+        else url.searchParams.delete('category_month');
         window.location.href = url.toString();
     });
 </script>
