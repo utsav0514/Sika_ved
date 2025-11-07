@@ -188,33 +188,33 @@
         fill: type !== 'bar' ? false : undefined
     });
 
-    // WEEKLY
+    // WEEKLY → LINE CHART
     new Chart(document.getElementById('weeklyChart'), {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: weeklySummary.map(w => w.period),
             datasets: [
-                createDataset('Expenses', weeklySummary.map(w => w.expenses), 'rgba(255,99,132,0.6)'),
-                createDataset('Incomes', weeklySummary.map(w => w.incomes), 'rgba(54,162,235,0.6)')
-            ]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-
-    // MONTHLY
-    new Chart(document.getElementById('monthlyChart'), {
-        type: 'line',
-        data: {
-            labels: monthlySummary.map(m => m.period),
-            datasets: [
-                createDataset('Expenses', monthlySummary.map(m => m.expenses), 'red', 'line'),
-                createDataset('Incomes', monthlySummary.map(m => m.incomes), 'green', 'line')
+                createDataset('Expenses', weeklySummary.map(w => w.expenses), 'red', 'line'),
+                createDataset('Incomes', weeklySummary.map(w => w.incomes), 'green', 'line')
             ]
         },
         options: { responsive: true }
     });
 
-    // YEARLY
+    // MONTHLY → BAR CHART
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: monthlySummary.map(m => m.period),
+            datasets: [
+                createDataset('Expenses', monthlySummary.map(m => m.expenses), 'rgba(255,99,132,0.6)'),
+                createDataset('Incomes', monthlySummary.map(m => m.incomes), 'rgba(54,162,235,0.6)')
+            ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // YEARLY → BAR CHART
     new Chart(document.getElementById('yearlyChart'), {
         type: 'bar',
         data: {
@@ -227,7 +227,7 @@
         options: { responsive: true }
     });
 
-    // CATEGORY
+    // CATEGORY → PIE CHART
     new Chart(document.getElementById('categoryChart'), {
         type: 'pie',
         data: {

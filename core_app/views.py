@@ -322,34 +322,40 @@ class ReportsPDFView(LoginRequiredMixin, View):
                     .order_by('-total')
         )
 
-        weekly_chart = ChartGenerator('Weekly Income vs Expense', 'bar').plot(
+        # ✅ WEEKLY CHART → LINE GRAPH
+        weekly_chart = ChartGenerator('Weekly Income vs Expense', 'line').plot(
             [w['period'] for w in weekly_summary],
             [
-                {'label':'Expenses', 'data':[w['expenses'] for w in weekly_summary], 'color':'red'},
-                {'label':'Incomes', 'data':[w['incomes'] for w in weekly_summary], 'color':'green'}
+                {'label': 'Expenses', 'data': [w['expenses'] for w in weekly_summary], 'color': 'red'},
+                {'label': 'Incomes', 'data': [w['incomes'] for w in weekly_summary], 'color': 'green'}
             ]
         )
 
-        monthly_chart = ChartGenerator('Monthly Income vs Expense', 'line').plot(
+        # ✅ MONTHLY CHART → BAR GRAPH
+        monthly_chart = ChartGenerator('Monthly Income vs Expense', 'bar').plot(
             [m['period'] for m in monthly_summary],
             [
-                {'label':'Expenses', 'data':[m['expenses'] for m in monthly_summary], 'color':'red'},
-                {'label':'Incomes', 'data':[m['incomes'] for m in monthly_summary], 'color':'green'}
+                {'label': 'Expenses', 'data': [m['expenses'] for m in monthly_summary], 'color': 'red'},
+                {'label': 'Incomes', 'data': [m['incomes'] for m in monthly_summary], 'color': 'green'}
             ]
         )
 
+        # YEARLY CHART (no change)
         yearly_chart = ChartGenerator('Yearly Income vs Expense', 'bar').plot(
             [y['period'] for y in yearly_summary],
             [
-                {'label':'Expenses', 'data':[y['expenses'] for y in yearly_summary], 'color':'orange'},
-                {'label':'Incomes', 'data':[y['incomes'] for y in yearly_summary], 'color':'blue'}
+                {'label': 'Expenses', 'data': [y['expenses'] for y in yearly_summary], 'color': 'orange'},
+                {'label': 'Incomes', 'data': [y['incomes'] for y in yearly_summary], 'color': 'blue'}
             ]
         )
 
+        # CATEGORY PIE CHART (same)
         category_chart = ChartGenerator('Expenses by Category', 'pie').plot(
             [c['category__name'] for c in expense_category],
-            [{'data':[c['total'] for c in expense_category],
-              'colors':['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF']}]
+            [{
+                'data': [c['total'] for c in expense_category],
+                'colors': ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+            }]
         )
 
         context = {

@@ -9,7 +9,7 @@ class Category(models.Model):
         return self.name
 
 
-# Income category
+# Income category (optional if you want to add later)
 class IncomeCategory(models.Model):
     name = models.CharField(max_length=50)
 
@@ -29,10 +29,11 @@ class Expense(models.Model):
         return f"{self.user.username} - {self.category.name if self.category else 'No Category'} - {self.amount}"
 
 
-# Income model
+
 class Income(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.FloatField()
+    description = models.TextField(blank=True, null=True)  # Added field
     date = models.DateField()
 
     def __str__(self):

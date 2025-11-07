@@ -20,7 +20,7 @@ class ExpenseAdmin(admin.ModelAdmin):
 # ========== Income ==========
 @admin.register(Income)
 class IncomeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'amount', 'date')
+    list_display = ('id', 'user', 'amount', 'description', 'date')  # ✅ Added description
     list_filter = ('date',)
-    search_fields = ('user__username',)
+    search_fields = ('user__username', 'description')
     ordering = ('-date',)

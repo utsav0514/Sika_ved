@@ -108,6 +108,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Date</th>
+                        <th>Description</th>
                         <th>Amount</th>
                         <th>Actions</th>
                     </tr>
@@ -116,6 +117,7 @@
                     {% for inc in incomes|slice:":5" %}
                     <tr>
                         <td>{{ inc.date|date:"M. j, Y" }}</td>
+                        <td>{{ inc.description }}</td>
                         <td>₹{{ inc.amount }}</td>
                         <td>
                             <a href="{% url 'edit_income' inc.id %}" class="btn btn-sm btn-warning">Edit</a>
@@ -124,7 +126,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="3" class="text-center">No incomes yet.</td></tr>
+                    <tr><td colspan="4" class="text-center">No incomes yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

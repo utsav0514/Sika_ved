@@ -6,14 +6,16 @@ class ExpenseForm(forms.ModelForm):
         model = Expense
         fields = ['category', 'amount', 'description', 'date']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
         }
 
 
 class IncomeForm(forms.ModelForm):
     class Meta:
         model = Income
-        fields = ['amount', 'date']
+        fields = ['amount', 'description', 'date']  
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
         }
