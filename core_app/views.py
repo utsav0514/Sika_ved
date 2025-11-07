@@ -5,7 +5,6 @@ import io
 import base64
 import json
 from datetime import date
-
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
@@ -20,6 +19,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
+import calendar
+from django.utils import timezone
 
 
 # ================= PDF RENDERER =================
@@ -82,14 +83,28 @@ class ChartGenerator:
 
 # ================= UTILITIES =================
 def get_week_label(date_obj):
+    """
+    Always return one of 4 possible week labels within a month.
+    For example:
+    - Days 1–7 → First Week
+    - Days 8–14 → Second Week
+    - Days 15–21 → Third Week
+    - Days 22–end → Fourth Week
+    """
     month = date_obj.month
     year = date_obj.year
     day = date_obj.day
-    first_day_of_month = date_obj.replace(day=1)
-    week_of_month = (day + first_day_of_month.weekday() - 1) // 7 + 1
-    week_names = ["First Week", "Second Week", "Third Week", "Fourth Week", "Fifth Week"]
-    return f"{year}-{month:02d}-{week_names[week_of_month-1]}"
 
+    if day <= 7:
+        week_name = "First Week"
+    elif day <= 14:
+        week_name = "Second Week"
+    elif day <= 21:
+        week_name = "Third Week"
+    else:
+        week_name = "Fourth Week"
+
+    return f"{year}-{month:02d}-{week_name}"
 
 class ReportsHelper:
     @staticmethod
