@@ -12,22 +12,48 @@
 
     <!-- ===================== CHARTS ===================== -->
     <div class="row g-4 mb-5">
+
+        <!-- Weekly Chart + Month Filter -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Weekly Income vs Expense</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title">Weekly Income vs Expense</h5>
+                        <select id="weeklyMonthFilter" class="form-select w-auto">
+                            <option value="">This Month</option>
+                            {% for m in all_months %}
+                            <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                                {{ m|date:"F Y" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <canvas id="weeklyChart"></canvas>
                 </div>
             </div>
         </div>
+
+        <!-- Monthly Chart + Year Filter -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Monthly Income vs Expense</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title">Monthly Income vs Expense</h5>
+                        <select id="monthlyYearFilter" class="form-select w-auto">
+                            <option value="">This Year</option>
+                            {% for y in all_years %}
+                            <option value="{{ y|date:'Y' }}" {% if selected_year == y|date:'Y' %}selected{% endif %}>
+                                {{ y|date:"Y" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
         </div>
+
+        <!-- Yearly Chart -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -36,14 +62,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- Category Chart + Month Filter -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Expenses by Category</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title">Expenses by Category</h5>
+                        <select id="categoryMonthFilter" class="form-select w-auto">
+                            <option value="">This Month</option>
+                            {% for m in all_months %}
+                            <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                                {{ m|date:"F Y" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- ===================== TABLES ===================== -->
@@ -188,7 +227,7 @@
         fill: type !== 'bar' ? false : undefined
     });
 
-    // WEEKLY → LINE CHART
+    // WEEKLY
     new Chart(document.getElementById('weeklyChart'), {
         type: 'line',
         data: {
@@ -201,7 +240,7 @@
         options: { responsive: true }
     });
 
-    // MONTHLY → BAR CHART
+    // MONTHLY
     new Chart(document.getElementById('monthlyChart'), {
         type: 'bar',
         data: {
@@ -214,7 +253,7 @@
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
 
-    // YEARLY → BAR CHART
+    // YEARLY
     new Chart(document.getElementById('yearlyChart'), {
         type: 'bar',
         data: {
@@ -227,7 +266,7 @@
         options: { responsive: true }
     });
 
-    // CATEGORY → PIE CHART
+    // CATEGORY
     new Chart(document.getElementById('categoryChart'), {
         type: 'pie',
         data: {
@@ -235,6 +274,31 @@
             datasets: [{ data: expenseCategory.map(c => c.total), backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
         },
         options: { responsive: true }
+    });
+
+    // ================= FILTER JS =================
+    document.getElementById('weeklyMonthFilter').addEventListener('change', function(){
+        const month = this.value;
+        const url = new URL(window.location.href);
+        if(month) url.searchParams.set('month', month);
+        else url.searchParams.delete('month');
+        window.location.href = url.toString();
+    });
+
+    document.getElementById('monthlyYearFilter').addEventListener('change', function(){
+        const year = this.value;
+        const url = new URL(window.location.href);
+        if(year) url.searchParams.set('year', year);
+        else url.searchParams.delete('year');
+        window.location.href = url.toString();
+    });
+
+    document.getElementById('categoryMonthFilter').addEventListener('change', function(){
+        const month = this.value;
+        const url = new URL(window.location.href);
+        if(month) url.searchParams.set('month', month);
+        else url.searchParams.delete('month');
+        window.location.href = url.toString();
     });
 </script>
 

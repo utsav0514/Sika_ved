@@ -105,44 +105,71 @@ def get_week_label(date_obj):
         week_name = "Fourth Week"
 
     return f"{year}-{month:02d}-{week_name}"
-
 class ReportsHelper:
     @staticmethod
-    def combine_summary(exp_qs, inc_qs, trunc_func, period_type='week'):
-        expense_summary = (
-            exp_qs.annotate(period=trunc_func('date'))
-                  .values('period')
-                  .annotate(total=Sum('amount'))
-                  .order_by('period')
-        )
-        income_summary = (
-            inc_qs.annotate(period=trunc_func('date'))
-                  .values('period')
-                  .annotate(total=Sum('amount'))
-                  .order_by('period')
-        )
-
+    def combine_summary(exp_qs, inc_qs, trunc_func=None, period_type='week'):
+        """
+        Combine expenses & incomes by fixed weeks (1–7, 8–14, 15–21, 22–end of month)
+        If period_type != 'week', fallback to normal month/year summary
+        """
         combined = []
-        periods = sorted(set([e['period'] for e in expense_summary] +
-                             [i['period'] for i in income_summary]))
 
-        for p in periods:
-            if period_type == 'week':
-                label = get_week_label(p)
-            elif period_type == 'month':
-                label = p.strftime('%Y-%m')
-            elif period_type == 'year':
-                label = p.strftime('%Y')
-            else:
-                label = p.strftime('%Y-%m-%d')
+        if period_type == 'week':
+            # Get all dates from expenses and incomes
+            all_dates = set(list(exp_qs.values_list('date', flat=True)) + 
+                            list(inc_qs.values_list('date', flat=True)))
+            # Get all months present
+            months = sorted(set((d.year, d.month) for d in all_dates))
 
-            combined.append({
-                'period': label,
-                'expenses': next((e['total'] for e in expense_summary if e['period'] == p), 0),
-                'incomes': next((i['total'] for i in income_summary if i['period'] == p), 0),
-            })
+            for y, m in months:
+                month_exp = exp_qs.filter(date__year=y, date__month=m)
+                month_inc = inc_qs.filter(date__year=y, date__month=m)
+
+                weeks = ['First Week','Second Week','Third Week','Fourth Week']
+                week_ranges = [(1,7),(8,14),(15,21),(22,31)]
+
+                for w_label, (start_day, end_day) in zip(weeks, week_ranges):
+                    week_expense = month_exp.filter(date__day__gte=start_day, date__day__lte=end_day).aggregate(Sum('amount'))['amount__sum'] or 0
+                    week_income = month_inc.filter(date__day__gte=start_day, date__day__lte=end_day).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                    # Only add if there is data
+                    if week_expense or week_income:
+                        combined.append({
+                            'period': f"{y}-{m:02d}-{w_label}",
+                            'expenses': week_expense,
+                            'incomes': week_income
+                        })
+        else:
+            # fallback to month/year summary
+            expense_summary = (
+                exp_qs.annotate(period=trunc_func('date'))
+                      .values('period')
+                      .annotate(total=Sum('amount'))
+                      .order_by('period')
+            )
+            income_summary = (
+                inc_qs.annotate(period=trunc_func('date'))
+                      .values('period')
+                      .annotate(total=Sum('amount'))
+                      .order_by('period')
+            )
+            periods = sorted(set([e['period'] for e in expense_summary] +
+                                 [i['period'] for i in income_summary]))
+            for p in periods:
+                if period_type == 'month':
+                    label = p.strftime('%Y-%m')
+                elif period_type == 'year':
+                    label = p.strftime('%Y')
+                else:
+                    label = p.strftime('%Y-%m-%d')
+
+                combined.append({
+                    'period': label,
+                    'expenses': next((e['total'] for e in expense_summary if e['period'] == p), 0),
+                    'incomes': next((i['total'] for i in income_summary if i['period'] == p), 0),
+                })
+
         return combined
-
 
 # ================= DASHBOARD =================
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -273,36 +300,55 @@ class ReportsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+
+        # GET parameters for filtering
+        month_filter = self.request.GET.get('month')  # format: YYYY-MM
+        year_filter = self.request.GET.get('year')    # format: YYYY
+
+        # Base QuerySets
         expenses = Expense.objects.filter(user=user)
         incomes = Income.objects.filter(user=user)
 
-        context['weekly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncWeek, 'week')
+        # Apply month filter
+        if month_filter:
+            year, month = map(int, month_filter.split('-'))
+            expenses = expenses.filter(date__year=year, date__month=month)
+            incomes = incomes.filter(date__year=year, date__month=month)
+
+        # Apply year filter
+        if year_filter:
+            year = int(year_filter)
+            expenses = expenses.filter(date__year=year)
+            incomes = incomes.filter(date__year=year)
+
+        # ================= FIXED-WEEK LOGIC =================
+        context['weekly_summary'] = ReportsHelper.combine_summary(expenses, incomes, None, 'week')
         context['monthly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncMonth, 'month')
         context['yearly_summary'] = ReportsHelper.combine_summary(expenses, incomes, TruncYear, 'year')
 
+        # Expense by category (still filtered by month/year)
         expense_category = (
             expenses.values('category__name')
                     .annotate(total=Sum('amount'))
                     .order_by('-total')
         )
-
         context['expense_category'] = expense_category
-        context['expense_category_json'] = json.dumps(
-            list(expenses.annotate(month=TruncMonth('date'))
-                       .values('month', 'category__name')
-                       .annotate(total=Sum('amount'))
-                       .order_by('-month', '-total')),
-            cls=DjangoJSONEncoder
-        )
 
-        # JSON for charts
+        # JSON for Chart.js
         context['weekly_summary_json'] = json.dumps(context['weekly_summary'], cls=DjangoJSONEncoder)
         context['monthly_summary_json'] = json.dumps(context['monthly_summary'], cls=DjangoJSONEncoder)
         context['yearly_summary_json'] = json.dumps(context['yearly_summary'], cls=DjangoJSONEncoder)
+        context['expense_category_json'] = json.dumps(list(expense_category), cls=DjangoJSONEncoder)
+
+        # Keep track of selected filters for the template
+        context['selected_month'] = month_filter
+        context['selected_year'] = year_filter
+
+        # All months & years for dropdown filters
+        context['all_months'] = Expense.objects.filter(user=user).dates('date', 'month', order='DESC')
+        context['all_years'] = Expense.objects.filter(user=user).dates('date', 'year', order='DESC')
 
         return context
-
-
 # ================= PDF REPORT CBV =================
 class ReportsPDFView(LoginRequiredMixin, View):
     login_url = '/login/'
