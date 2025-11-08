@@ -184,20 +184,28 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = datetime.today()
 
-        # Get all data (filtered by user)
+        # All data for the user
         expenses = Expense.objects.filter(user=user).order_by('-date')
         incomes = Income.objects.filter(user=user).order_by('-date')
 
-        # Calculate current month's total income & expense
+        # ✅ Monthly totals (for display)
         current_month = today.month
         current_year = today.year
-        expense_total = expenses.filter(date__month=current_month, date__year=current_year).aggregate(total=Sum('amount'))['total'] or 0
-        income_total = incomes.filter(date__month=current_month, date__year=current_year).aggregate(total=Sum('amount'))['total'] or 0
+        expense_total = expenses.filter(
+            date__month=current_month, date__year=current_year
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        income_total = incomes.filter(
+            date__month=current_month, date__year=current_year
+        ).aggregate(total=Sum('amount'))['total'] or 0
 
-        # Calculate net balance
-        net_balance = income_total - expense_total
+        # ✅ All-time totals
+        total_expense_all = expenses.aggregate(total=Sum('amount'))['total'] or 0
+        total_income_all = incomes.aggregate(total=Sum('amount'))['total'] or 0
 
-        # Monthly summaries for charts
+        # ✅ Net balance across all time
+        net_balance = total_income_all - total_expense_all
+
+        # ✅ Monthly summaries for charts
         expense_monthly = (
             expenses.values('date__year', 'date__month')
             .annotate(total=Sum('amount'))
@@ -209,19 +217,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .order_by('date__year', 'date__month')
         )
 
-        # Add to context
         context.update({
             'expenses': expenses,
             'incomes': incomes,
-            'expense_total': expense_total,
-            'income_total': income_total,
+            'expense_total': expense_total,  # this month
+            'income_total': income_total,    # this month
+            'total_expense_all': total_expense_all,
+            'total_income_all': total_income_all,
             'net_balance': net_balance,
             'expense_monthly': expense_monthly,
             'income_monthly': income_monthly,
         })
-
         return context
-
 
 
 # ================= EXPENSE CBVs =================
