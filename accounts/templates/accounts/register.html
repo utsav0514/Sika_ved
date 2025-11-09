@@ -1,36 +1,752 @@
-
 {% extends 'accounts/base.html' %}
 
 {% block title %}Register{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow">
-                <div class="card-header text-center bg-primary text-white">
-                    <h4>Create an Account</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
+<style>
+    body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .register-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2d6a8a 0%, #1a4d61 100%);
+        padding: 20px;
+        overflow: hidden;
+    }
+    
+    .register-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        max-width: 500px;
+        width: 100%;
+        animation: slideUp 0.5s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .card-header h4 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .card-header p {
+        margin: 10px 0 0;
+        font-size: 15px;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .card-body {
+        padding: 25px;
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(45, 106, 138, 0.2) transparent;
+    }
+
+    .card-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .card-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .card-body::-webkit-scrollbar-thumb {
+        background-color: rgba(45, 106, 138, 0.2);
+        border-radius: 3px;
+    }
+    
+    .mb-3 {
+        margin-bottom: 18px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 13px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #2d6a8a;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(45, 106, 138, 0.1);
+    }
+    
+    .form-control:hover {
+        border-color: #b0b0b0;
+    }
+    
+    .text-danger {
+        color: #e74c3c;
+        font-size: 12px;
+        margin-top: 5px;
+        display: block;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 15px rgba(45, 106, 138, 0.4);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(45, 106, 138, 0.6);
+        transform: translateY(-2px);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(45, 106, 138, 0.3);
+    }
+    
+    .mt-3 {
+        margin-top: 20px;
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .mt-3 a {
+        color: #2d6a8a;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .mt-3 a::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #2d6a8a;
+        transition: width 0.3s ease;
+    }
+    
+    .mt-3 a:hover::after {
+        width: 100%;
+    }
+    
+    .mt-3 a:hover {
+        color: #7ba885;
+    }
+    
+    /* Password visibility toggle */
+    .password-wrapper {
+        position: relative;
+    }
+    
+    .password-wrapper .form-control {
+        padding-right: 50px;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 20px;
+        color: #666;
+        transition: all 0.3s ease;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .toggle-password:hover {
+        color: #2d6a8a;
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .toggle-password:active {
+        transform: translateY(-50%) scale(0.95);
+    }
+    
+    .input-wrapper {
+        position: relative;
+    }
+    
+    .input-wrapper .form-control {
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .input-wrapper:focus-within .form-control {
+        border-color: #2d6a8a;
+        box-shadow: 0 0 0 3px rgba(45, 106, 138, 0.1);
+    }
+    
+    .password-requirements {
+        font-size: 11px;
+        color: #666;
+        margin-top: 6px;
+        padding: 8px 10px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e8f4f8 100%);
+        border-radius: 6px;
+        border-left: 3px solid #2d6a8a;
+        display: flex;
+        align-items: start;
+        gap: 6px;
+        line-height: 1.5;
+    }
+    
+    .password-requirements::before {
+        content: '🔐';
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    /* Terms and Conditions Checkbox */
+    .terms-wrapper {
+        margin: 16px 0 10px;
+        padding: 0;
+    }
+    
+    .terms-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+    }
+    
+    .terms-checkbox input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    
+    .checkmark {
+        position: relative;
+        height: 20px;
+        width: 20px;
+        background-color: white;
+        border: 2px solid #d0d0d0;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+    
+    .terms-checkbox:hover .checkmark {
+        border-color: #2d6a8a;
+    }
+    
+    .terms-checkbox input:checked ~ .checkmark {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        border-color: #2d6a8a;
+    }
+    
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    
+    .terms-checkbox input:checked ~ .checkmark:after {
+        display: block;
+        animation: checkAnim 0.3s ease;
+    }
+    
+    @keyframes checkAnim {
+        0% {
+            transform: rotate(45deg) scale(0);
+        }
+        50% {
+            transform: rotate(45deg) scale(1.2);
+        }
+        100% {
+            transform: rotate(45deg) scale(1);
+        }
+    }
+    
+    .terms-text {
+        font-size: 12.5px;
+        color: #666;
+        line-height: 1.5;
+    }
+    
+    .terms-text a {
+        color: #2d6a8a;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+    
+    .terms-text a:hover {
+        color: #7ba885;
+        text-decoration: underline;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .modal-content {
+        background: white;
+        border-radius: 15px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 80vh;
+        overflow: hidden;
+        animation: slideDown 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+    }
+    
+    .modal-body {
+        padding: 25px;
+        overflow-y: auto;
+        max-height: calc(80vh - 80px);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(45, 106, 138, 0.3) transparent;
+    }
+    
+    .modal-body::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .modal-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .modal-body::-webkit-scrollbar-thumb {
+        background-color: rgba(45, 106, 138, 0.3);
+        border-radius: 4px;
+    }
+    
+    .modal-body h4 {
+        color: #2d6a8a;
+        font-size: 18px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+    }
+    
+    .modal-body h4:first-child {
+        margin-top: 0;
+    }
+    
+    .modal-body p {
+        color: #555;
+        line-height: 1.7;
+        margin-bottom: 15px;
+    }
+    
+    .modal-body ul {
+        color: #555;
+        line-height: 1.7;
+        margin-left: 20px;
+    }
+    
+    .modal-body ul li {
+        margin-bottom: 8px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .card-header h4 {
+            font-size: 24px;
+        }
+        
+        .card-header p {
+            font-size: 14px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="register-container">
+    <div class="register-card">
+        <div class="card-header">
+            <h4>Create an Account ✨</h4>
+            <p>Join Sikka Ved to manage your finances smarter 💰</p>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {% if 'username' in field.name.lower %}
+                                👤 {{ field.label }}
+                            {% elif 'email' in field.name.lower %}
+                                📧 {{ field.label }}
+                            {% elif 'password' in field.name.lower %}
+                                🔒 {{ field.label }}
+                            {% else %}
+                                {{ field.label }}
+                            {% endif %}
+                        </label>
+                        {% if 'password' in field.name.lower %}
+                            <div class="input-wrapper password-wrapper">
                                 {{ field }}
-                                {% for error in field.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
+                                <button type="button" class="toggle-password" onclick="togglePassword(this)">
+                                    👁️
+                                </button>
                             </div>
+                        {% else %}
+                            <div class="input-wrapper">
+                                {{ field }}
+                            </div>
+                        {% endif %}
+                        {% if field.name == 'password1' %}
+                        <div class="password-requirements">
+                            Your password must be 8-20 characters long and include a mix of letters, numbers, and symbols
+                        </div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger">❌ {{ error }}</div>
                         {% endfor %}
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
-                    </form>
-                    <div class="mt-3 text-center">
-                        Already have an account? <a href="{% url 'login' %}">Login here</a>
                     </div>
+                {% endfor %}
+                
+                <div class="terms-wrapper">
+                    <label class="terms-checkbox">
+                        <input type="checkbox" id="termsCheckbox" required>
+                        <span class="checkmark"></span>
+                        <span class="terms-text">
+                            I agree to the <a href="#" onclick="showTermsModal(event)">Terms</a> & <a href="#" onclick="showPrivacyModal(event)">Privacy Policy</a>
+                        </span>
+                    </label>
                 </div>
+                
+                <button type="submit" class="btn-primary" id="submitBtn">Create Account 🚀</button>
+            </form>
+            <div class="mt-3">
+                Already have an account? <a href="{% url 'login' %}">Login here 🔑</a>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal-overlay" id="termsModal" onclick="closeModalOnOverlay(event, 'termsModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📜 Terms and Conditions</h3>
+            <button class="close-modal" onclick="closeModal('termsModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <h4>1. Acceptance of Terms</h4>
+            <p>By accessing and using Sikka Ved, you accept and agree to be bound by the terms and provision of this agreement.</p>
+            
+            <h4>2. Use of Service</h4>
+            <p>You agree to use Sikka Ved only for lawful purposes and in accordance with these Terms and Conditions. You agree not to:</p>
+            <ul>
+                <li>Use the service in any way that violates any applicable law or regulation</li>
+                <li>Attempt to gain unauthorized access to any part of the service</li>
+                <li>Engage in any activity that interferes with or disrupts the service</li>
+                <li>Use the service to transmit any harmful or malicious code</li>
+            </ul>
+            
+            <h4>3. Account Security</h4>
+            <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account.</p>
+            
+            <h4>4. Financial Data</h4>
+            <p>Sikka Ved helps you manage your financial expenditures. All data you input is your responsibility, and you agree to provide accurate information. We are not liable for any financial decisions made based on the information in the system.</p>
+            
+            <h4>5. Modifications to Service</h4>
+            <p>We reserve the right to modify or discontinue the service at any time without notice. We shall not be liable to you or any third party for any modification, suspension, or discontinuance of the service.</p>
+            
+            <h4>6. Limitation of Liability</h4>
+            <p>Sikka Ved shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service.</p>
+            
+            <h4>7. Contact Information</h4>
+            <p>If you have any questions about these Terms and Conditions, please contact us at support@sikkaved.com</p>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-overlay" id="privacyModal" onclick="closeModalOnOverlay(event, 'privacyModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔒 Privacy Policy</h3>
+            <button class="close-modal" onclick="closeModal('privacyModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <h4>1. Information We Collect</h4>
+            <p>We collect information that you provide directly to us, including:</p>
+            <ul>
+                <li>Account information (username, email, password)</li>
+                <li>Financial transaction data and expenditure records</li>
+                <li>Profile information and preferences</li>
+                <li>Communications with our support team</li>
+            </ul>
+            
+            <h4>2. How We Use Your Information</h4>
+            <p>We use the information we collect to:</p>
+            <ul>
+                <li>Provide, maintain, and improve our services</li>
+                <li>Process your transactions and manage your account</li>
+                <li>Send you technical notices and support messages</li>
+                <li>Respond to your comments and questions</li>
+                <li>Analyze usage patterns to improve user experience</li>
+            </ul>
+            
+            <h4>3. Data Security</h4>
+            <p>We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction. Your password is encrypted, and we use secure protocols for data transmission.</p>
+            
+            <h4>4. Data Sharing</h4>
+            <p>We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
+            <ul>
+                <li>With your consent</li>
+                <li>To comply with legal obligations</li>
+                <li>To protect our rights and property</li>
+                <li>With service providers who assist in our operations</li>
+            </ul>
+            
+            <h4>5. Your Rights</h4>
+            <p>You have the right to:</p>
+            <ul>
+                <li>Access your personal data</li>
+                <li>Correct inaccurate data</li>
+                <li>Request deletion of your data</li>
+                <li>Export your data</li>
+                <li>Opt-out of marketing communications</li>
+            </ul>
+            
+            <h4>6. Cookies and Tracking</h4>
+            <p>We use cookies and similar tracking technologies to enhance your experience, analyze usage, and assist in our marketing efforts. You can control cookie settings through your browser.</p>
+            
+            <h4>7. Changes to Privacy Policy</h4>
+            <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date.</p>
+            
+            <h4>8. Contact Us</h4>
+            <p>If you have questions about this Privacy Policy, please contact us at privacy@sikkaved.com</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(button) {
+    const wrapper = button.parentElement;
+    const input = wrapper.querySelector('input');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '👁️‍🗨️';
+    } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+    }
+}
+
+function showTermsModal(event) {
+    event.preventDefault();
+    document.getElementById('termsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showPrivacyModal(event) {
+    event.preventDefault();
+    document.getElementById('privacyModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function closeModalOnOverlay(event, modalId) {
+    if (event.target.classList.contains('modal-overlay')) {
+        closeModal(modalId);
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal('termsModal');
+        closeModal('privacyModal');
+    }
+});
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (form && termsCheckbox && submitBtn) {
+        form.addEventListener('submit', function(event) {
+            if (!termsCheckbox.checked) {
+                event.preventDefault();
+                alert('⚠️ Please accept the Terms and Conditions to continue.');
+                termsCheckbox.focus();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
