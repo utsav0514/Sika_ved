@@ -2,41 +2,413 @@
 {% block title %}Add Income{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4 fw-bold">Add Income</h2>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .income-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2d6a8a 0%, #1a4d61 100%);
+        padding: 0;
+    }
+    
+    .income-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 20px;
+        animation: slideUp 0.5s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .card-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .card-body {
+        padding: 20px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(45, 106, 138, 0.2) transparent;
+    }
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    .card-body::-webkit-scrollbar {
+        width: 6px;
+    }
 
-    <form method="post" class="p-4 shadow-sm rounded-4 bg-light">
-        {% csrf_token %}
+    .card-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .card-body::-webkit-scrollbar-thumb {
+        background-color: rgba(45, 106, 138, 0.2);
+        border-radius: 3px;
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideDown 0.3s ease-out;
+        border: none;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+    
+    .alert-error, .alert-danger {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.6;
+        transition: opacity 0.3s ease;
+    }
+    
+    .btn-close:hover {
+        opacity: 1;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-control, .form-select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: #7ba885;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(123, 168, 133, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .form-control:hover, .form-select:hover {
+        border-color: #b0b0b0;
+    }
+    
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .helptext {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0 0 0;
+    }
+    
+    .errorlist li {
+        color: #e74c3c;
+        font-size: 13px;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    .btn {
+        flex: 1;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(45, 106, 138, 0.3);
+    }
+    
+    .btn-success:hover {
+        box-shadow: 0 6px 16px rgba(45, 106, 138, 0.5);
+        transform: translateY(-1px);
+    }
+    
+    .btn-success:active {
+        transform: translateY(0);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+    }
+    
+    .btn-secondary:hover {
+        box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+        transform: translateY(-1px);
+    }
+    
+    .btn-secondary:active {
+        transform: translateY(0);
+    }
+    
+    /* Django form styling */
+    .mb-3 {
+        margin-bottom: 16px;
+    }
+    
+    .mb-3 label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 6px;
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .mb-3 input,
+    .mb-3 select,
+    .mb-3 textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 13px;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+    
+    .mb-3 input:focus,
+    .mb-3 select:focus,
+    .mb-3 textarea:focus {
+        outline: none;
+        border-color: #7ba885;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(123, 168, 133, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .mb-3 input:hover,
+    .mb-3 select:hover,
+    .mb-3 textarea:hover {
+        border-color: #b0b0b0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 576px) {
+        .card-header h2 {
+            font-size: 26px;
+        }
         
-        <div class="mb-3">
-            <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold">Amount</label>
-            {{ form.amount }}
-        </div>
+        .card-body {
+            padding: 25px 20px;
+        }
+        
+        .button-group {
+            flex-direction: column;
+        }
+    }
+</style>
 
-        <div class="mb-3">
-            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Description</label>
-            {{ form.description }}
+<div class="income-container">
+    <div class="income-card">
+        <div class="card-header">
+            <h2>💵 Add New Income</h2>
         </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-        <div class="mb-3">
-            <label for="{{ form.date.id_for_label }}" class="form-label fw-semibold">Date</label>
-            {{ form.date }}
-        </div>
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.amount.id_for_label }}" class="form-label">💰 Amount</label>
+                    {{ form.amount }}
+                    {% if form.amount.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.amount.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success px-4">Add</button>
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary px-4">Cancel</a>
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">📝 Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.description.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.date.id_for_label }}" class="form-label">📅 Date</label>
+                    {{ form.date }}
+                    {% if form.date.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.date.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-success">
+                        ✅ Add Income
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                        ❌ Cancel
+                    </a>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 
 <script>
