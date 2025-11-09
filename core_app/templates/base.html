@@ -3,37 +3,203 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Expenditure Management{% endblock %}</title>
+    <title>{% block title %}Sikka Ved - Smart Expenditure Management{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        :root {
+            --primary-color: #1B5F6F;
+            --secondary-color: #2D7F8F;
+            --accent-color: #8FBC5C;
+            --text-color: #2A2A2A;
+            --light-text: #4A4A4A;
+            --background: #F5F7F9;
+            --nav-bg: rgba(255, 255, 255, 0.98);
+            --shadow-color: rgba(27, 95, 111, 0.15);
+            --border-color: rgba(27, 95, 111, 0.1);
+        }
+
+        .navbar {
+            background: var(--nav-bg) !important;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            height: 45px;
+            width: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .brand-slogan {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            margin: 0;
+        }
+
+        .nav-link {
+            color: var(--text-color) !important;
+            font-weight: 500;
+            padding: 0.5rem 1.2rem !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(27, 95, 111, 0.1);
+            color: var(--primary-color) !important;
+        }
+
+        .btn-nav {
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white !important;
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: white;
+                padding: 1rem;
+                border-radius: 12px;
+                margin-top: 1rem;
+                box-shadow: 0 4px 20px var(--shadow-color);
+                text-align: center;
+            }
+            .brand-slogan {
+                display: none;
+            }
+            .ms-auto {
+                margin: 0 auto;
+            }
+        }
+    </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'dashboard' %}">ExpenseManager</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
-
-                <!-- Logout button as POST form -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'dashboard' %}">
+            <img src="{% static 'images/logo.png' %}" alt="Sikka Ved" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-name">Sikka-Ved</span>
+                <span class="brand-slogan">A Smart Expenditure Management</span>
+            </div>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="ms-auto d-flex align-items-center gap-3">
                 {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-link nav-link" style="padding:0; border:none;">Logout</button>
-                    </form>
-                </li>
+                <form method="post" action="{% url 'logout' %}" class="d-flex">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-nav">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </button>
+                </form>
                 {% else %}
-                <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                <a href="{% url 'login' %}" class="btn-nav">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
                 {% endif %}
-            </ul>
+            </div>
         </div>
     </div>
 </nav>
 
-<div class="container mt-4">
+<div class="main-content">
     {% block content %}{% endblock %}
 </div>
+
+<style>
+    body {
+        min-height: 100vh;
+        background: var(--background);
+    }
+
+    .main-content {
+        padding-top: 76px;
+        min-height: calc(100vh - 76px);
+        position: relative;
+    }
+
+    .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Additional Global Styles */
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px var(--shadow-color);
+        border: 1px solid var(--border-color);
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .form-control {
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--shadow-color);
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.6rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow-color);
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/scripts.js' %}"></script>
