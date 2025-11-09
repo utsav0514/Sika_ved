@@ -16,7 +16,7 @@
 
     <!-- Summary Cards -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center text-white bg-success rounded-4 p-3">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Monthly Income</h6>
@@ -24,7 +24,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center text-white bg-danger rounded-4 p-3">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Monthly Expense</h6>
@@ -32,7 +32,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0 text-center text-white bg-info rounded-4 p-3">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Net Balance</h6>
@@ -47,25 +47,121 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 text-center text-white bg-primary rounded-4 p-3">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Budget Analysis Summary</h6>
+                    {% if budget_analysis.budget_status %}
+                        <p>Total Income: ₹{{ budget_analysis.budget_status.total_income }}</p>
+                        <p>Total Expense: ₹{{ budget_analysis.budget_status.total_expense }}</p>
+                        <p>Net Balance: ₹{{ budget_analysis.budget_status.balance }}</p>
+                        <p>Savings Ratio: {{ budget_analysis.budget_status.savings_ratio }}%</p>
+                        <p>Status: {{ budget_analysis.budget_status.status }}</p>
+                    {% else %}
+                        <p style="color:red; font-size: 0.9rem;">
+                            {{ budget_analysis.insights.0 }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Budget Analysis -->
+    <div class="card shadow-sm mb-4 rounded-4 p-3">
+        <h5 class="mb-3">🧾 Detailed Budget Analysis</h5>
+
+        <!-- Expense Distribution -->
+        <h6>🔹 1. Expense Distribution by Category</h6>
+        {% if budget_analysis.expense_distribution %}
+            <table class="table table-bordered mb-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount (₹)</th>
+                        <th>Percentage (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in budget_analysis.expense_distribution %}
+                        <tr>
+                            <td>{{ cat.category }}</td>
+                            <td>{{ cat.amount }}</td>
+                            <td>{{ cat.percentage }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No expenses recorded.</p>
+        {% endif %}
+
+        <!-- Monthly Trend -->
+        <h6>🔹 2. Monthly Trend</h6>
+        {% if budget_analysis.monthly_trend %}
+            <table class="table table-bordered mb-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>Month</th>
+                        <th>Income (₹)</th>
+                        <th>Expense (₹)</th>
+                        <th>Balance (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in budget_analysis.monthly_trend %}
+                        <tr>
+                            <td>{{ month.month }}</td>
+                            <td>{{ month.income }}</td>
+                            <td>{{ month.expense }}</td>
+                            <td>
+                                {{ month.balance }}
+                                {% if month.balance >= 0 %}
+                                    <small>(Saved)</small>
+                                {% else %}
+                                    <small>(Overspent)</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No monthly data available.</p>
+        {% endif %}
+
+        <!-- Insights -->
+        <h6>💬 Insights</h6>
+        <ul>
+            {% for insight in budget_analysis.insights %}
+                <li>{{ insight }}</li>
+            {% endfor %}
+        </ul>
     </div>
 
     <!-- Expense & Income Charts -->
     <div class="row g-3 mb-5">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card shadow-sm p-3 rounded-4">
                 <h5 class="card-title text-center">Expenses by Month</h5>
                 <canvas id="expenseChart"></canvas>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card shadow-sm p-3 rounded-4">
                 <h5 class="card-title text-center">Incomes by Month</h5>
                 <canvas id="incomeChart"></canvas>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 rounded-4">
+                <h5 class="card-title text-center">Income vs Expense</h5>
+                <canvas id="budgetPieChart"></canvas>
+            </div>
+        </div>
     </div>
 
-    <!-- Expenses Section -->
+    <!-- Expenses Table (Recent/All) -->
     <div class="card shadow-sm mb-4 rounded-4 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5>Expenses</h5>
@@ -109,7 +205,7 @@
         </div>
     </div>
 
-    <!-- Incomes Section -->
+    <!-- Incomes Table (Recent/All) -->
     <div class="card shadow-sm mb-5 rounded-4 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5>Incomes</h5>
@@ -160,7 +256,7 @@ const expenseCtx = document.getElementById('expenseChart').getContext('2d');
 new Chart(expenseCtx, {
     type: 'bar',
     data: {
-        labels: [{% for e in expense_monthly %}'{{ e.month|date:"M Y" }}',{% endfor %}],
+        labels: [{% for e in expense_monthly %}'{{ e.date__month }}-{{ e.date__year }}',{% endfor %}],
         datasets: [{
             label: 'Expenses',
             data: [{% for e in expense_monthly %}{{ e.total }},{% endfor %}],
@@ -174,7 +270,7 @@ const incomeCtx = document.getElementById('incomeChart').getContext('2d');
 new Chart(incomeCtx, {
     type: 'bar',
     data: {
-        labels: [{% for i in income_monthly %}'{{ i.month|date:"M Y" }}',{% endfor %}],
+        labels: [{% for i in income_monthly %}'{{ i.date__month }}-{{ i.date__year }}',{% endfor %}],
         datasets: [{
             label: 'Incomes',
             data: [{% for i in income_monthly %}{{ i.total }},{% endfor %}],
@@ -182,6 +278,20 @@ new Chart(incomeCtx, {
         }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// Pie Chart for Income vs Expense
+const pieCtx = document.getElementById('budgetPieChart').getContext('2d');
+new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Income', 'Expense'],
+        datasets: [{
+            data: [{{ budget_analysis.budget_status.total_income|default:0 }}, {{ budget_analysis.budget_status.total_expense|default:0 }}],
+            backgroundColor: ['#4CAF50', '#F44336']
+        }]
+    },
+    options: { responsive: true }
 });
 
 // ================= Dropdown Filter Logic =================

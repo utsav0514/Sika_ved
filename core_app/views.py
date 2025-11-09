@@ -20,6 +20,7 @@ from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
 import calendar
 from django.core.serializers.json import DjangoJSONEncoder
+from core_app.algorithms.budget_balancer import BudgetBalancer
 
 # ================= PDF RENDERER =================
 class PDFRenderer:
@@ -184,7 +185,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = datetime.today()
 
-        # All data for the user
+        # ✅ All data for the user
         expenses = Expense.objects.filter(user=user).order_by('-date')
         incomes = Income.objects.filter(user=user).order_by('-date')
 
@@ -217,17 +218,34 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .order_by('date__year', 'date__month')
         )
 
+        # ✅ Integrate Budget Balancer Algorithm for detailed analysis
+        try:
+            # Pass full Income and Expense objects, not just amounts
+            balancer = BudgetBalancer(incomes, expenses)
+            budget_analysis = balancer.analyze()
+        except Exception as e:
+            # Fallback in case algorithm has an issue
+            budget_analysis = {
+                'budget_status': {},
+                'expense_distribution': [],
+                'monthly_trend': [],
+                'insights': [f"Error: {str(e)}"]
+            }
+
+        # ✅ Update context
         context.update({
             'expenses': expenses,
             'incomes': incomes,
-            'expense_total': expense_total,  # this month
-            'income_total': income_total,    # this month
+            'expense_total': expense_total,      # this month
+            'income_total': income_total,        # this month
             'total_expense_all': total_expense_all,
             'total_income_all': total_income_all,
             'net_balance': net_balance,
             'expense_monthly': expense_monthly,
             'income_monthly': income_monthly,
+            'budget_analysis': budget_analysis,  # ✅ Detailed analysis added
         })
+
         return context
 
 
