@@ -2,183 +2,567 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
 
+    body {
+        min-height: 100vh;
+        background: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    .dashboard-container {
+        padding: 30px 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+        min-height: 100vh;
+    }
+    
+    /* Header Section */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .dashboard-header h2 {
+        font-size: 36px;
+        font-weight: 800;
+        color: #333333;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-success, .btn-primary, .btn-info {
+        background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%);
+        color: white;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Summary Cards */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .summary-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s ease-out;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    
+    .summary-card.income::before {
+        background: linear-gradient(135deg, #7ba885 0%, #5a9e6a 100%);
+    }
+    
+    .summary-card.expense::before {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    
+    .summary-card.balance::before {
+        background: linear-gradient(135deg, #36A2EB 0%, #2196F3 100%);
+    }
+    
+    .summary-card.analysis::before {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .summary-card h6 {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #666;
+        margin-bottom: 12px;
+    }
+    
+    .summary-card h3 {
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0;
+    }
+    
+    .summary-card.income h3 {
+        color: #7ba885;
+    }
+    
+    .summary-card.expense h3 {
+        color: #e74c3c;
+    }
+    
+    .summary-card.balance h3 {
+        color: #36A2EB;
+    }
+    
+    .summary-card small {
+        font-size: 13px;
+        font-weight: 500;
+        opacity: 0.8;
+    }
+    
+    .summary-card p {
+        font-size: 14px;
+        margin: 8px 0;
+        color: #555;
+    }
+    
+    /* Charts Section */
+    .charts-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .chart-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .chart-card h5 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    /* Data Tables */
+    .data-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        margin-bottom: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: nowrap;
+        gap: 15px;
+    }
+    
+    .section-header h5 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2d6a8a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-select {
+        padding: 6px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #f8f9fa;
+        width: auto;
+        min-width: 120px;
+        margin-left: auto;
+    }
+
+    .form-select:hover {
+        border-color: #2d6a8a;
+        background: #ffffff;
+    }
+    
+    .form-select:focus {
+        outline: none;
+        border-color: #2d6a8a;
+        box-shadow: 0 0 0 3px rgba(45, 106, 138, 0.1);
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table {
+        width: 100%;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table thead {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+    }
+    
+    .table thead th {
+        padding: 15px;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+    
+    .table thead th:first-child {
+        border-radius: 10px 0 0 0;
+    }
+    
+    .table thead th:last-child {
+        border-radius: 0 10px 0 0;
+    }
+    
+    .table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .table tbody tr:hover {
+        background: #f8f9fa;
+        transform: scale(1.01);
+    }
+    
+    .table tbody td {
+        padding: 15px;
+        font-size: 14px;
+        color: #555;
+        border: none;
+    }
+    
+    .table tbody tr:last-child td:first-child {
+        border-radius: 0 0 0 10px;
+    }
+    
+    .table tbody tr:last-child td:last-child {
+        border-radius: 0 0 10px 0;
+    }
+    
+    .btn-sm {
+        padding: 6px 14px;
+        font-size: 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #5a9e6a 0%, #7ba885 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-sm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .record-count {
+        text-align: right;
+        margin-top: 15px;
+        font-size: 13px;
+        color: #666;
+        font-weight: 600;
+    }
+    
+    /* Budget Analysis Specific */
+    .analysis-content {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    
+    .analysis-content p {
+        margin: 5px 0;
+    }
+    
+    .insights-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .insights-list li {
+        padding: 8px 12px;
+        margin: 5px 0;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 3px solid #2d6a8a;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .dashboard-header h2 {
+            font-size: 28px;
+        }
+        
+        .action-buttons {
+            width: 100%;
+        }
+        
+        .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .charts-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .summary-card h3 {
+            font-size: 26px;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Dashboard</h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'add_expense' %}" class="btn btn-success">Add Expense</a>
-            <a href="{% url 'add_income' %}" class="btn btn-primary">Add Income</a>
-            <a href="{% url 'reports' %}" class="btn btn-info">View Reports</a>
+    <div class="dashboard-header">
+        <h2>📊 Dashboard</h2>
+        <div class="action-buttons">
+            <a href="{% url 'add_income' %}" class="btn btn-primary">💵 Add Income</a>
+            <a href="{% url 'add_expense' %}" class="btn btn-success">💳 Add Expense</a>
+            <a href="{% url 'reports' %}" class="btn btn-info">📈 View Reports</a>
         </div>
     </div>
 
     <!-- Summary Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 text-center text-white bg-success rounded-4 p-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Monthly Income</h6>
-                    <h3 class="card-title">₹{{ income_total }}</h3>
-                </div>
-            </div>
+    <div class="summary-cards">
+        <div class="summary-card income">
+            <h6>💵 Monthly Income</h6>
+            <h3>₹{{ income_total }}</h3>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 text-center text-white bg-danger rounded-4 p-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Monthly Expense</h6>
-                    <h3 class="card-title">₹{{ expense_total }}</h3>
-                </div>
-            </div>
+        <div class="summary-card expense">
+            <h6>💳 Monthly Expense</h6>
+            <h3>₹{{ expense_total }}</h3>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 text-center text-white bg-info rounded-4 p-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Net Balance</h6>
-                    <h3 class="card-title">
-                        ₹{{ net_balance }}
-                        {% if net_balance >= 0 %}
-                            <small>(Saved)</small>
-                        {% else %}
-                            <small>(Over Spent)</small>
-                        {% endif %}
-                    </h3>
-                </div>
-            </div>
+        <div class="summary-card balance">
+            <h6>💰 Net Balance</h6>
+            <h3>
+                ₹{{ net_balance }}
+                {% if net_balance >= 0 %}
+                    <small>✅ (Saved)</small>
+                {% else %}
+                    <small>⚠️ (Over Spent)</small>
+                {% endif %}
+            </h3>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 text-center text-white bg-primary rounded-4 p-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Budget Analysis Summary</h6>
-                    {% if budget_analysis.budget_status %}
-                        <p>Total Income: ₹{{ budget_analysis.budget_status.total_income }}</p>
-                        <p>Total Expense: ₹{{ budget_analysis.budget_status.total_expense }}</p>
-                        <p>Net Balance: ₹{{ budget_analysis.budget_status.balance }}</p>
-                        <p>Savings Ratio: {{ budget_analysis.budget_status.savings_ratio }}%</p>
-                        <p>Status: {{ budget_analysis.budget_status.status }}</p>
-                    {% else %}
-                        <p style="color:red; font-size: 0.9rem;">
-                            {{ budget_analysis.insights.0 }}
-                        </p>
-                    {% endif %}
-                </div>
+        <div class="summary-card analysis">
+            <h6>📊 Budget Analysis</h6>
+            <div class="analysis-content">
+                {% if budget_analysis.budget_status %}
+                    <p><strong>Total Income:</strong> ₹{{ budget_analysis.budget_status.total_income }}</p>
+                    <p><strong>Total Expense:</strong> ₹{{ budget_analysis.budget_status.total_expense }}</p>
+                    <p><strong>Balance:</strong> ₹{{ budget_analysis.budget_status.balance }}</p>
+                    <p><strong>Savings:</strong> {{ budget_analysis.budget_status.savings_ratio }}%</p>
+                    <p><strong>Status:</strong> {{ budget_analysis.budget_status.status }}</p>
+                {% else %}
+                    <p style="color:#e74c3c;">{{ budget_analysis.insights.0 }}</p>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Detailed Budget Analysis -->
-    <div class="card shadow-sm mb-4 rounded-4 p-3">
-        <h5 class="mb-3">🧾 Detailed Budget Analysis</h5>
+    <div class="data-section">
+        <h5>🧾 Detailed Budget Analysis</h5>
 
         <!-- Expense Distribution -->
-        <h6>🔹 1. Expense Distribution by Category</h6>
+        <h6 style="margin-top: 20px; color: #2d6a8a;">🔹 1. Expense Distribution by Category</h6>
         {% if budget_analysis.expense_distribution %}
-            <table class="table table-bordered mb-3">
-                <thead class="table-light">
-                    <tr>
-                        <th>Category</th>
-                        <th>Amount (₹)</th>
-                        <th>Percentage (%)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cat in budget_analysis.expense_distribution %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
                         <tr>
-                            <td>{{ cat.category }}</td>
-                            <td>{{ cat.amount }}</td>
-                            <td>{{ cat.percentage }}</td>
+                            <th>Category</th>
+                            <th>Amount (₹)</th>
+                            <th>Percentage (%)</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for cat in budget_analysis.expense_distribution %}
+                            <tr>
+                                <td>{{ cat.category }}</td>
+                                <td><strong>₹{{ cat.amount }}</strong></td>
+                                <td>{{ cat.percentage }}%</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
-            <p>No expenses recorded.</p>
+            <p style="padding: 15px; color: #999;">No expenses recorded.</p>
         {% endif %}
 
         <!-- Monthly Trend -->
-        <h6>🔹 2. Monthly Trend</h6>
+        <h6 style="margin-top: 30px; color: #2d6a8a;">🔹 2. Monthly Trend</h6>
         {% if budget_analysis.monthly_trend %}
-            <table class="table table-bordered mb-3">
-                <thead class="table-light">
-                    <tr>
-                        <th>Month</th>
-                        <th>Income (₹)</th>
-                        <th>Expense (₹)</th>
-                        <th>Balance (₹)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for month in budget_analysis.monthly_trend %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
                         <tr>
-                            <td>{{ month.month }}</td>
-                            <td>{{ month.income }}</td>
-                            <td>{{ month.expense }}</td>
-                            <td>
-                                {{ month.balance }}
-                                {% if month.balance >= 0 %}
-                                    <small>(Saved)</small>
-                                {% else %}
-                                    <small>(Overspent)</small>
-                                {% endif %}
-                            </td>
+                            <th>Month</th>
+                            <th>Income (₹)</th>
+                            <th>Expense (₹)</th>
+                            <th>Balance (₹)</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for month in budget_analysis.monthly_trend %}
+                            <tr>
+                                <td>{{ month.month }}</td>
+                                <td><strong style="color: #7ba885;">₹{{ month.income }}</strong></td>
+                                <td><strong style="color: #e74c3c;">₹{{ month.expense }}</strong></td>
+                                <td>
+                                    <strong>₹{{ month.balance }}</strong>
+                                    {% if month.balance >= 0 %}
+                                        <small style="color: #7ba885;">✅ (Saved)</small>
+                                    {% else %}
+                                        <small style="color: #e74c3c;">⚠️ (Overspent)</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
-            <p>No monthly data available.</p>
+            <p style="padding: 15px; color: #999;">No monthly data available.</p>
         {% endif %}
 
         <!-- Insights -->
-        <h6>💬 Insights</h6>
-        <ul>
+        <h6 style="margin-top: 30px; color: #2d6a8a;">💬 Insights</h6>
+        <ul class="insights-list">
             {% for insight in budget_analysis.insights %}
                 <li>{{ insight }}</li>
             {% endfor %}
         </ul>
     </div>
 
-    <!-- Expense & Income Charts -->
-    <div class="row g-3 mb-5">
-        <div class="col-md-4">
-            <div class="card shadow-sm p-3 rounded-4">
-                <h5 class="card-title text-center">Expenses by Month</h5>
-                <canvas id="expenseChart"></canvas>
-            </div>
+    <!-- Charts -->
+    <div class="charts-container">
+        <div class="chart-card">
+            <h5>📉 Expenses by Month</h5>
+            <canvas id="expenseChart"></canvas>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm p-3 rounded-4">
-                <h5 class="card-title text-center">Incomes by Month</h5>
-                <canvas id="incomeChart"></canvas>
-            </div>
+        <div class="chart-card">
+            <h5>📈 Incomes by Month</h5>
+            <canvas id="incomeChart"></canvas>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm p-3 rounded-4">
-                <h5 class="card-title text-center">Income vs Expense</h5>
-                <canvas id="budgetPieChart"></canvas>
-            </div>
+        <div class="chart-card">
+            <h5>📊 Income vs Expense</h5>
+            <canvas id="budgetPieChart"></canvas>
         </div>
     </div>
 
-    <!-- Expenses Table (Recent/All) -->
-    <div class="card shadow-sm mb-4 rounded-4 p-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5>Expenses</h5>
-            <select id="expenseFilter" class="form-select form-select-sm w-auto">
-                <option value="recent" selected>Recent</option>
-                <option value="all">All</option>
+    <!-- Expenses Section -->
+    <div class="data-section">
+        <div class="section-header">
+            <h5>💳 Expenses</h5>
+            <select id="expenseFilter" class="form-select">
+                <option value="recent" selected>Recent (5)</option>
+                <option value="all">All Records</option>
             </select>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover mb-0" id="expenseTable">
-                <thead class="table-light">
+            <table class="table">
+                <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Category</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Actions</th>
+                        <th>📅 Date</th>
+                        <th>🏷️ Category</th>
+                        <th>📝 Description</th>
+                        <th>💰 Amount</th>
+                        <th>⚙️ Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -187,41 +571,41 @@
                         <td>{{ exp.date|date:"M. j, Y" }}</td>
                         <td>{{ exp.category.name }}</td>
                         <td>{{ exp.description }}</td>
-                        <td>₹{{ exp.amount }}</td>
+                        <td><strong>₹{{ exp.amount }}</strong></td>
                         <td>
-                            <a href="{% url 'edit_expense' exp.id %}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{% url 'edit_expense' exp.id %}" class="btn btn-sm btn-warning">✏️ Edit</a>
                             <a href="{% url 'delete_expense' exp.id %}" class="btn btn-sm btn-danger"
-                               onclick="return confirm('Are you sure you want to delete this expense?');">Delete</a>
+                               onclick="return confirm('Are you sure you want to delete this expense?');">🗑️ Delete</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="text-center">No expenses yet.</td></tr>
+                    <tr><td colspan="5" class="text-center" style="padding: 30px; color: #999;">No expenses yet. Start adding your expenses! 💸</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <div class="text-end mt-2">
-            <small id="expenseCount">Showing 5 of {{ expenses|length }} records</small>
+        <div class="record-count">
+            <span id="expenseCount">Showing 5 of {{ expenses|length }} records</span>
         </div>
     </div>
 
-    <!-- Incomes Table (Recent/All) -->
-    <div class="card shadow-sm mb-5 rounded-4 p-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5>Incomes</h5>
-            <select id="incomeFilter" class="form-select form-select-sm w-auto">
-                <option value="recent" selected>Recent</option>
-                <option value="all">All</option>
+    <!-- Incomes Section -->
+    <div class="data-section">
+        <div class="section-header">
+            <h5>💵 Incomes</h5>
+            <select id="incomeFilter" class="form-select">
+                <option value="recent" selected>Recent (5)</option>
+                <option value="all">All Records</option>
             </select>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover mb-0" id="incomeTable">
-                <thead class="table-light">
+            <table class="table">
+                <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Actions</th>
+                        <th>📅 Date</th>
+                        <th>📝 Description</th>
+                        <th>💰 Amount</th>
+                        <th>⚙️ Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -229,24 +613,23 @@
                     <tr class="income-row {% if forloop.counter > 5 %}d-none{% endif %}">
                         <td>{{ inc.date|date:"M. j, Y" }}</td>
                         <td>{{ inc.description }}</td>
-                        <td>₹{{ inc.amount }}</td>
+                        <td><strong>₹{{ inc.amount }}</strong></td>
                         <td>
-                            <a href="{% url 'edit_income' inc.id %}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{% url 'edit_income' inc.id %}" class="btn btn-sm btn-warning">✏️ Edit</a>
                             <a href="{% url 'delete_income' inc.id %}" class="btn btn-sm btn-danger"
-                               onclick="return confirm('Are you sure you want to delete this income?');">Delete</a>
+                               onclick="return confirm('Are you sure you want to delete this income?');">🗑️ Delete</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="text-center">No incomes yet.</td></tr>
+                    <tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">No incomes yet. Start adding your incomes! 💰</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <div class="text-end mt-2">
-            <small id="incomeCount">Showing 5 of {{ incomes|length }} records</small>
+        <div class="record-count">
+            <span id="incomeCount">Showing 5 of {{ incomes|length }} records</span>
         </div>
     </div>
-
 </div>
 
 <!-- Chart.js -->
@@ -260,10 +643,32 @@ new Chart(expenseCtx, {
         datasets: [{
             label: 'Expenses',
             data: [{% for e in expense_monthly %}{{ e.total }},{% endfor %}],
-            backgroundColor: '#ff4d4d'
+            backgroundColor: 'rgba(231, 76, 60, 0.8)',
+            borderColor: '#e74c3c',
+            borderWidth: 2,
+            borderRadius: 8
         }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: { 
+        responsive: true, 
+        plugins: { 
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
 });
 
 const incomeCtx = document.getElementById('incomeChart').getContext('2d');
@@ -274,10 +679,32 @@ new Chart(incomeCtx, {
         datasets: [{
             label: 'Incomes',
             data: [{% for i in income_monthly %}{{ i.total }},{% endfor %}],
-            backgroundColor: '#36A2EB'
+            backgroundColor: 'rgba(123, 168, 133, 0.8)',
+            borderColor: '#7ba885',
+            borderWidth: 2,
+            borderRadius: 8
         }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: { 
+        responsive: true, 
+        plugins: { 
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
 });
 
 // Pie Chart for Income vs Expense
@@ -288,10 +715,23 @@ new Chart(pieCtx, {
         labels: ['Income', 'Expense'],
         datasets: [{
             data: [{{ budget_analysis.budget_status.total_income|default:0 }}, {{ budget_analysis.budget_status.total_expense|default:0 }}],
-            backgroundColor: ['#4CAF50', '#F44336']
+            backgroundColor: ['#7ba885', '#e74c3c'],
+            borderWidth: 2,
+            borderColor: '#fff'
         }]
     },
-    options: { responsive: true }
+    options: { 
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: { size: 13, weight: 600 }
+                }
+            }
+        }
+    }
 });
 
 // ================= Dropdown Filter Logic =================
