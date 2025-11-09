@@ -2,16 +2,258 @@
 {% block title %}Edit Income{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Edit Income</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="card p-4 shadow-sm">
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Update Income</button>
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .income-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2d6a8a 0%, #1a4d61 100%);
+        padding: 0;
+    }
+    
+    .income-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 20px;
+        animation: slideUp 0.5s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    
+    .card-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .card-body {
+        padding: 20px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(45, 106, 138, 0.2) transparent;
+    }
+
+    .card-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .card-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .card-body::-webkit-scrollbar-thumb {
+        background-color: rgba(45, 106, 138, 0.2);
+        border-radius: 3px;
+    }
+    
+    form p {
+        margin-bottom: 16px;
+    }
+    
+    form p label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 6px;
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    form p input,
+    form p select,
+    form p textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 13px;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+    
+    form p input:focus,
+    form p select:focus,
+    form p textarea:focus {
+        outline: none;
+        border-color: #2d6a8a;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(45, 106, 138, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    form p input:hover,
+    form p select:hover,
+    form p textarea:hover {
+        border-color: #b0b0b0;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0 0 0;
+    }
+    
+    .errorlist li {
+        color: #e74c3c;
+        font-size: 13px;
+        animation: shake 0.3s ease;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    .btn {
+        flex: 1;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #2d6a8a 0%, #7ba885 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(45, 106, 138, 0.3);
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 6px 16px rgba(45, 106, 138, 0.5);
+        transform: translateY(-1px);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+    }
+    
+    .btn-secondary:hover {
+        box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+        transform: translateY(-1px);
+    }
+    
+    .btn-secondary:active {
+        transform: translateY(0);
+    }
+    
+    /* Responsive */
+    @media (max-width: 576px) {
+        .card-header h2 {
+            font-size: 22px;
+        }
+        
+        .button-group {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="income-container">
+    <div class="income-card">
+        <div class="card-header">
+            <h2>💵 Edit Income</h2>
         </div>
-    </form>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Save Changes
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                        ❌ Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.setAttribute("max", today);
+    }
+});
+</script>
 {% endblock %}
 
