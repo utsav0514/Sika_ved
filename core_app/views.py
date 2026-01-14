@@ -14,7 +14,6 @@ from django.db.models import Sum
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from django.http import HttpResponse
 from django.template.loader import get_template
-from xhtml2pdf import pisa
 from django.utils import timezone
 from .models import Expense, Income
 from .forms import ExpenseForm, IncomeForm
@@ -32,6 +31,20 @@ class PDFRenderer:
     def render(self):
         template = get_template(self.template_src)
         html = template.render(self.context_dict)
+        # Import xhtml2pdf lazily so the module is not required for import-time
+        # of this views module. If xhtml2pdf is not installed, return a
+        # helpful HTML response (so the reports can still be viewed).
+        try:
+            from xhtml2pdf import pisa
+        except ImportError:
+            # Fallback: return rendered HTML with an install hint
+            hint = (
+                "<p><strong>xhtml2pdf is not installed.</strong> "
+                "To enable PDF export install the package: "
+                "<code>pip install xhtml2pdf</code></p>"
+            )
+            return HttpResponse(hint + html, content_type='text/html')
+
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{self.filename}"'
         pisa_status = pisa.CreatePDF(html, dest=response)

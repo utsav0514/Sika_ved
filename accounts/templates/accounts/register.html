@@ -579,7 +579,8 @@
                     </label>
                 </div>
                 
-                <button type="submit" class="btn-primary" id="submitBtn">Create Account 🚀</button>
+                <div id="termsError" class="text-danger" style="display:none; margin-bottom:10px;"></div>
+                <button type="submit" class="btn-primary" id="submitBtn" disabled>Create Account 🚀</button>
             </form>
             <div class="mt-3">
                 Already have an account? <a href="{% url 'login' %}">Login here 🔑</a>
@@ -737,12 +738,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const termsCheckbox = document.getElementById('termsCheckbox');
     const submitBtn = document.getElementById('submitBtn');
-    
+
     if (form && termsCheckbox && submitBtn) {
+        // Disable/enable button based on checkbox and clear error if checked
+        function toggleButtonAndError() {
+            submitBtn.disabled = !termsCheckbox.checked;
+            if (termsCheckbox.checked) {
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+            }
+        }
+        const errorDiv = document.getElementById('termsError');
+        toggleButtonAndError();
+        termsCheckbox.addEventListener('change', toggleButtonAndError);
+
         form.addEventListener('submit', function(event) {
             if (!termsCheckbox.checked) {
                 event.preventDefault();
-                alert('⚠️ Please accept the Terms and Conditions to continue.');
+                errorDiv.textContent = 'Please agree to terms before continuing';
+                errorDiv.style.display = 'block';
                 termsCheckbox.focus();
             }
         });
